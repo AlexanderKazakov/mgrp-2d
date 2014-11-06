@@ -1,0 +1,30 @@
+<task>
+	<stratum G="15" nu="0.2" />
+	<fractures>
+		<fracture number="0">
+			<initial x="0" y="0" angle="10"/>
+			<elements half-length="1" number_of_elements="10"/>
+			<pressure value="0.1" type="const"/>
+		</fracture>
+<!--	<fracture number="1">
+			<initial x="5" y="0" angle="70"/>
+			<elements half-length="1" number_of_elements="10"/>
+			<pressure value="0.1" type="const"/>
+		</fracture>
+		<fracture number="2">
+			<initial x="10" y="0" angle="70"/>
+			<elements half-length="1" number_of_elements="10"/>
+			<pressure value="0.1" type="const"/>
+		</fracture>
+		<fracture number="3">
+			<initial x="15" y="0" angle="70"/>
+			<elements half-length="1" number_of_elements="10"/>
+			<pressure value="0.1" type="const"/>
+		</fracture>
+		<fracture number="4">
+			<initial x="16" y="0" angle="90"/>
+			<elements half-length="1" number_of_elements="10"/>
+			<pressure value="0.1" type="const"/>
+		</fracture>	-->
+	</fractures>
+</task>
