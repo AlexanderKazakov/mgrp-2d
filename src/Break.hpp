@@ -54,7 +54,8 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Break &brk) {
-		os << brk.getCx() << "\t" << brk.getCy() << "\t" << brk.getDs() 
+		os //<< brk.getCx() << "\t" << brk.getCy() 
+				<< "\t" << brk.getDs() 
 				<< "\t" << brk.getDn() //<< std::endl << brk.getBs()
 				//<< "\t" << brk.getBn()  
 				<< std::endl;

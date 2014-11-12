@@ -30,11 +30,14 @@ Field Field::inRotatedAxis(double beta) {
 }
 
 double Field::directionOfMaxTensileStress() {
-	double Smax = (Sxx + Syy + sqrt((Sxx - Syy) * (Sxx - Syy) + 4 * Sxy * Sxy)) / 2;
-	if (Smax <= 0) std::cout << "End of fraction's growth\n";
-	return (atan((Smax - Sxx) / Sxy));
+	return (atan((Smax() - Sxx) / Sxy));
 }
 
 double Field::Mises() {
-	return Sxx*Syy - Sxy*Sxy;
+	// TODO - Mises
+	return 0;
+}
+
+double Field::Smax() {
+	return (Sxx + Syy + sqrt((Sxx - Syy) * (Sxx - Syy) + 4 * Sxy * Sxy)) / 2;
 }

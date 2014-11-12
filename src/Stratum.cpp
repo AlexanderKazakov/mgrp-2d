@@ -23,7 +23,7 @@ int Stratum::calculateNextFracture() {
 	if (fractures.end() == currentFracture)
 		return 0;
 	
-	(*currentFracture).calculate(fractures.begin());
+	currentFracture->calculate(fractures.begin());
 	currentFracture++;	
 	return 1;
 }
@@ -31,74 +31,99 @@ int Stratum::calculateNextFracture() {
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 	std::vector<Fracture>::iterator fracture = fractures.begin();
 	Field field;
-	while (fracture != currentFracture) {
-		field += (*fracture).calculateImpactInPoint(x, y);
+	while (fracture != fractures.end()) {
+		field += fracture->calculateImpactInPoint(x, y);
 		fracture++;
 	}
 	return field;
 }
 
-//void Stratum::visualize() {
-//	Visualization vis;
-//	std::vector<Fracture>::iterator fracture = fractures.begin();
-//	while (fracture != fractures.end()) {
-//		int N = (*fracture).getNumOfPointsForPlot();
-//		std::cout << N << std::endl;
-//		double *x = new double[N];
-//		double *y = new double[N];
-//
-//		(*fracture).getPointsForPlot(x, y);
-//		vis.plotFracture(N, x, y);
-//		
-//		//vis.plotField(&Stratum::calculateImpactInPoint);
-//		
-//		fracture++;
-//		delete [] x;
-//		delete [] y;
-//	}
-//}
-
 void Stratum::visualize() {
-	std::vector<Fracture>::iterator fracture = fractures.begin();
-	mglGraph gr;
-	double Xmin = -2;
-	double Xmax = 20;
-	double Ymin = -22;
-	double Ymax = 22;
+	double Xmin = -6;
+	double Xmax = 6;
+	double Ymin = -6;
+	double Ymax = 6;
+	mglGraph gr = mglGraph(0, 1200, 800);
 	gr.SetRanges(Xmin, Xmax, Ymin, Ymax);
 	gr.Axis();
+
+	drawFractures(gr);
+	drawField(gr, Xmin, Xmax, Ymin, Ymax);
+	drawDirections(gr, Xmin, Xmax, Ymin, Ymax);
+	
+	gr.WriteFrame("fractures.png");
+}
+
+void Stratum::drawFractures(mglGraph& gr) {
+	std::vector<Fracture>::iterator fracture = fractures.begin();	
 	while (fracture != fractures.end()) {
-		int N = (*fracture).getNumOfPointsForPlot();
-		std::cout << N << std::endl;
+		int N = fracture->getNumOfBreaks() + 1;
 		double *_x = new double[N];
 		double *_y = new double[N];
-
-		(*fracture).getPointsForPlot(_x, _y);
+		// TODO - remove _x and _y
+		fracture->getPointsForPlot(_x, _y);
 		mglData x;
 		mglData y;
 		x.Set(_x, N);
 		y.Set(_y, N);
-
-		gr.Plot(x, y, "k");		
-		
-		fracture++;
+		gr.Plot(x, y, ".k");
 		delete [] _x;
 		delete [] _y;
+		fracture++;
 	}
-	
-//	int N = 100;
-//	mglData x(N);
-//	mglData y(N);
-//	mglData f(N, N);
-//	for (int i = 0; i < N; i += 1)
-//		for (int j = 0; j < N; j += 1) {
-//			x.a[i] = (Xmax - Xmin)*i/N + Xmin;
-//			y.a[j] = (Ymax - Ymin)*j/N + Ymin;
-//			double _x = x.a[i];
-//			double _y = y.a[j];
-//			f.a[i + N*j] = 1e+4 * calculateImpactInPoint(_x, _y).Sxy;
-//		}
-//	gr.Dens(x, y, f);
-//	gr.Colorbar();
-	gr.WriteFrame("fractures.png");
+}
+
+void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
+									const double &Ymin, const double &Ymax) {
+	int N = 100;
+	mglData x(N);
+	mglData y(N);
+	mglData f(N, N);
+	double maxF = 0;
+	for (int i = 0; i < N; i += 1) {
+		x.a[i] = (Xmax - Xmin) * i / N + Xmin;
+		y.a[i] = (Ymax - Ymin) * i / N + Ymin;
+	}
+	for (int i = 0; i < N; i += 1)
+		for (int j = 0; j < N; j += 1) {
+			double _x = x.a[i];
+			double _y = y.a[j];
+			double _f = calculateImpactInPoint(_x, _y).Sxy;
+			maxF = (maxF > fabs(_f)) ? maxF : fabs(_f);
+			f.a[i + N * j] = _f;
+		}
+	maxF = maxF / 0.9;
+	for (int i = 0; i < N; i += 1)
+		for (int j = 0; j < N; j += 1) {
+			f.a[i + N * j] = f.a[i + N * j] / maxF;
+		}
+	gr.Dens(x, y, f);
+	gr.Colorbar();
+}
+
+void Stratum::drawDirections(mglGraph &gr, const double &Xmin, const double &Xmax,
+		const double &Ymin, const double &Ymax) {
+	int N = 20;
+	mglData x(N);
+	mglData y(N);
+	mglData ax(N, N);
+	mglData ay(N, N);
+	for (int i = 1; i < N; i += 1) {
+		x.a[i] = (Xmax - Xmin) * i / N + Xmin;
+		y.a[i] = (Ymax - Ymin) * i / N + Ymin;
+	}
+	for (int i = 1; i < N; i += 1)
+		for (int j = 1; j < N; j += 1) {
+			double _x = x.a[i];
+			double _y = y.a[j];
+			ax.a[i + N * j] = cos(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
+			ay.a[i + N * j] = sin(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
+		}
+	gr.Vect(x, y, ax, ay, "0");
+	for (int i = 1; i < N; i += 1)
+		for (int j = 1; j < N; j += 1) {
+			ax.a[i + N * j] = - ax.a[i + N * j];
+			ay.a[i + N * j] = - ay.a[i + N * j];
+		}
+	gr.Vect(x, y, ax, ay, "0");
 }

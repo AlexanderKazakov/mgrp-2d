@@ -39,6 +39,7 @@ void Engine::loadTask() {
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
 		int numOfElems = atoi(elements->Attribute("number_of_elements"));
+		if (numOfElems % 2 == 0) numOfElems += 1;
 		double half_length = atof(elements->Attribute("half-length"));
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
 		double pressure = atof(xml_pressure->Attribute("value"));

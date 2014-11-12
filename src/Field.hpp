@@ -13,6 +13,7 @@ public:
 	Field inRotatedAxis(double beta);
 	double directionOfMaxTensileStress();
 	double Mises();
+	double Smax();
 	double Sxx;
 	double Syy;
 	double Sxy;

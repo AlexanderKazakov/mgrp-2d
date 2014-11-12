@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 #include "Break.hpp"
 #include "Field.hpp"
 
@@ -20,7 +21,7 @@ public:
 	bool operator<(const Fracture &other) const;
 	void calculate(std::vector<Fracture>::const_iterator firstFracture);
 	Field calculateImpactInPoint (const double &x, const double &y) const;
-	int getNumOfPointsForPlot() const;
+	int getNumOfBreaks() const;
 	void getPointsForPlot(double *x, double *y) const;
 private:
 	int number;
