@@ -27,6 +27,12 @@ void Engine::loadTask() {
 	double G = atof( xml_stratum->Attribute("G") );
 	double nu = atof( xml_stratum->Attribute("nu") );
 	stratum.setRheology(G, nu);
+	TiXmlElement *xml_ranges = xml_task->FirstChildElement("ranges");
+	double Xmin = atof(xml_ranges->Attribute("Xmin"));
+	double Xmax = atof(xml_ranges->Attribute("Xmax"));
+	double Ymin = atof(xml_ranges->Attribute("Ymin"));
+	double Ymax = atof(xml_ranges->Attribute("Ymax"));
+	stratum.setRanges(Xmin, Xmax, Ymin, Ymax);
 	
 	TiXmlElement *xml_fractures = xml_task->FirstChildElement("fractures");
 	TiXmlElement *xml_fracture = xml_fractures->FirstChildElement("fracture");

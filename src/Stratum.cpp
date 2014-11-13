@@ -14,6 +14,13 @@ void Stratum::setRheology(double _G, double _nu) {
 	G = _G;		nu = _nu;
 }
 
+void Stratum::setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax) {
+	Xmin = _Xmin;
+	Xmax = _Xmax;
+	Ymin = _Ymin;
+	Ymax = _Ymax;		
+}
+
 void Stratum::sortFractures() {
 	std::sort(fractures.begin(), fractures.end());
 	currentFracture = fractures.begin();
@@ -39,23 +46,19 @@ Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 }
 
 void Stratum::visualize() {
-	double Xmin = -22;
-	double Xmax = 22;
-	double Ymin = -22;
-	double Ymax = 22;
 	mglGraph gr = mglGraph(0, 1200, 800);
 	gr.SetRanges(Xmin, Xmax, Ymin, Ymax);
 	gr.Axis();
 
 	drawFractures(gr);
-	drawField(gr, Xmin, Xmax, Ymin, Ymax);
-	drawDirections(gr, Xmin, Xmax, Ymin, Ymax);
+	drawField(gr);
+	drawDirections(gr);
 	
 	gr.WriteFrame("fractures.png");
 }
 
 void Stratum::drawFractures(mglGraph& gr) {
-	std::vector<Fracture>::iterator fracture = fractures.begin();	
+	std::vector<Fracture>::iterator fracture = fractures.begin();
 	while (fracture != fractures.end()) {
 		int N = fracture->getNumOfBreaks() + 1;
 		double *_x = new double[N];
@@ -66,6 +69,16 @@ void Stratum::drawFractures(mglGraph& gr) {
 		mglData y;
 		x.Set(_x, N);
 		y.Set(_y, N);
+//		
+//		double _Xmin = x.Minimal();
+//		double _Xmax = x.Maximal();
+//		double _Ymin = y.Minimal();
+//		double _Ymax = y.Maximal();
+//		Xmin = (Xmin < _Xmin) ? Xmin : _Xmin;
+//		Xmax = (Xmax > _Xmax) ? Xmax : _Xmax;
+//		Ymin = (Ymin < _Ymin) ? Ymin : _Ymin;
+//		Ymax = (Ymax > _Ymax) ? Ymax : _Ymax;
+//		
 		gr.Plot(x, y, ".k");
 		delete [] _x;
 		delete [] _y;
@@ -73,16 +86,15 @@ void Stratum::drawFractures(mglGraph& gr) {
 	}
 }
 
-void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
-									const double &Ymin, const double &Ymax) {
-	int N = 101;
+void Stratum::drawField(mglGraph &gr) {
+	int N = 104;
 	mglData x(N);
 	mglData y(N);
 	mglData f(N, N);
 	double maxF = 0;
 	for (int i = 0; i < N; i += 1) {
-		x.a[i] = (Xmax - Xmin) * i / N + Xmin;
-		y.a[i] = (Ymax - Ymin) * i / N + Ymin;
+		x.a[i] = (Xmax - Xmin) * i / (N-1) + Xmin;
+		y.a[i] = (Ymax - Ymin) * i / (N-1) + Ymin;
 	}
 	for (int i = 0; i < N; i += 1)
 		for (int j = 0; j < N; j += 1) {
@@ -101,9 +113,8 @@ void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
 	gr.Colorbar();
 }
 
-void Stratum::drawDirections(mglGraph &gr, const double &Xmin, const double &Xmax,
-		const double &Ymin, const double &Ymax) {
-	int N = 21;
+void Stratum::drawDirections(mglGraph &gr) {
+	int N = 23;
 	mglData x(N);
 	mglData y(N);
 	mglData ax(N, N);
