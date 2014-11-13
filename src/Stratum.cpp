@@ -39,10 +39,10 @@ Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 }
 
 void Stratum::visualize() {
-	double Xmin = -6;
-	double Xmax = 6;
-	double Ymin = -6;
-	double Ymax = 6;
+	double Xmin = -22;
+	double Xmax = 22;
+	double Ymin = -22;
+	double Ymax = 22;
 	mglGraph gr = mglGraph(0, 1200, 800);
 	gr.SetRanges(Xmin, Xmax, Ymin, Ymax);
 	gr.Axis();
@@ -75,7 +75,7 @@ void Stratum::drawFractures(mglGraph& gr) {
 
 void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
 									const double &Ymin, const double &Ymax) {
-	int N = 100;
+	int N = 101;
 	mglData x(N);
 	mglData y(N);
 	mglData f(N, N);
@@ -88,7 +88,7 @@ void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
 		for (int j = 0; j < N; j += 1) {
 			double _x = x.a[i];
 			double _y = y.a[j];
-			double _f = calculateImpactInPoint(_x, _y).Sxy;
+			double _f = calculateImpactInPoint(_x, _y).Trace();
 			maxF = (maxF > fabs(_f)) ? maxF : fabs(_f);
 			f.a[i + N * j] = _f;
 		}
@@ -103,7 +103,7 @@ void Stratum::drawField(mglGraph &gr, const double &Xmin, const double &Xmax,
 
 void Stratum::drawDirections(mglGraph &gr, const double &Xmin, const double &Xmax,
 		const double &Ymin, const double &Ymax) {
-	int N = 20;
+	int N = 21;
 	mglData x(N);
 	mglData y(N);
 	mglData ax(N, N);
@@ -116,8 +116,9 @@ void Stratum::drawDirections(mglGraph &gr, const double &Xmin, const double &Xma
 		for (int j = 1; j < N; j += 1) {
 			double _x = x.a[i];
 			double _y = y.a[j];
-			ax.a[i + N * j] = cos(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
-			ay.a[i + N * j] = sin(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
+			double Smax = calculateImpactInPoint(_x, _y).Smax() * 5;			
+			ax.a[i + N * j] = Smax * cos(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
+			ay.a[i + N * j] = Smax * sin(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
 		}
 	gr.Vect(x, y, ax, ay, "0");
 	for (int i = 1; i < N; i += 1)

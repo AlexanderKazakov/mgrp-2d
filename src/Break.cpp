@@ -16,10 +16,13 @@ void Break::setExternalImpact(Field field) {
 	externalSigmaS = field.inRotatedAxis(beta).Sxy;
 }
 
-void Break::calculateImpactOf(const Break& break2, double& Ass, double& Asn, double& Ans, double& Ann) {
+void Break::calculateImpactOf(const Break& break2, double& Ass, double& Asn,
+													double& Ans, double& Ann) {
 	double gamma = beta - break2.getBeta();
-	double x = (Cx - break2.getCx()) * cos(gamma) - (Cy - break2.getCy()) * sin(gamma);
-	double y = (Cx - break2.getCx()) * sin(gamma) + (Cy - break2.getCy()) * cos(gamma);
+	double x = (Cx - break2.getCx()) * cos(break2.getBeta()) +
+								(Cy - break2.getCy()) * sin(break2.getBeta());
+	double y = - (Cx - break2.getCx()) * sin(break2.getBeta()) +
+								(Cy - break2.getCy()) * cos(break2.getBeta());
 	Ass = 2*G * ( - sin(2 * gamma) * F4(x, y) - cos(2 * gamma) * F5(x, y) - 
 			y * (sin(2*gamma) * F6(x, y) - cos(2*gamma) * F7(x, y)) );
 	Asn =-2*G * y * (cos(2*gamma) * F6(x, y) + sin(2*gamma) * F7(x, y));

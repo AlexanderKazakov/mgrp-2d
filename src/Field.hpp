@@ -12,8 +12,16 @@ public:
 	void operator+=(const Field &other);
 	Field inRotatedAxis(double beta);
 	double directionOfMaxTensileStress();
-	double Mises();
+	double Trace();
 	double Smax();
+	/**
+	 * Calculate arctan of (a / b) taking into account the infinities
+	 * 
+     * @param a	numerator
+     * @param b	denominator
+     * @return arctan (a / b)
+     */
+	double arctan(const double &a, const double &b);
 	double Sxx;
 	double Syy;
 	double Sxy;

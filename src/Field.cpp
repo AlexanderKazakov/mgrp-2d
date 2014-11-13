@@ -30,14 +30,23 @@ Field Field::inRotatedAxis(double beta) {
 }
 
 double Field::directionOfMaxTensileStress() {
-	return (atan((Smax() - Sxx) / Sxy));
+	return arctan((Smax() - Sxx), Sxy);
 }
 
-double Field::Mises() {
-	// TODO - Mises
-	return 0;
+double Field::Trace() {
+	return Sxx + Syy;
 }
 
 double Field::Smax() {
 	return (Sxx + Syy + sqrt((Sxx - Syy) * (Sxx - Syy) + 4 * Sxy * Sxy)) / 2;
+}
+
+double Field::arctan(const double& a, const double& b) {
+	double beta = atan(a / b);
+	if (b == 0) {
+		if (a > 0) beta = M_PI / 2;
+		if (a < 0) beta = - M_PI / 2;
+		if (a == 0) std::cout << "Error in atan: 0/0\n";
+	}
+	return beta;
 }

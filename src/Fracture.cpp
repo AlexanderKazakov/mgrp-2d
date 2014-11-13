@@ -38,62 +38,56 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 	breaks.front().setExternalImpact(field);
 	
 	//	While the fracture is not stopped
-	bool fractionIsStopped = false;
-	while ( (numOfCalculatedBreaks < numOfBreaks) && (!fractionIsStopped) ) {
-		std::cout << fractionIsStopped << std::endl;
+	while ( (numOfCalculatedBreaks < numOfBreaks) ) {
 		//	Calculate the existing configuration
-		fractionIsStopped = calculateBreaks();
-
-		std::vector<Break>::const_iterator brk = breaks.begin();
-		while (brk != breaks.end()) {
-			std::cout << *brk;
-			brk++;
+		bool fractionIsStopped = calculateBreaks();
+		if (fractionIsStopped) {
+			numOfBreaks = numOfCalculatedBreaks;
+			std::cout << "Fraction number " << number << " is stopped!\n";
 		}
-		std::cout << std::endl;
-		
-		//	Determine the direction of the fraction's growth
-		double K1 = - breaks.front().getDn();
-		double K2 = - breaks.front().getDs();
-		double beta1 = breaks.front().getBeta() + calcAngleOfRotation(K1, K2);
-		double x1 = breaks.front().getCx() - half_lengthOfBreaks * 
-								( cos(beta1) + cos(breaks.front().getBeta()) );
-		double y1 = breaks.front().getCy() - half_lengthOfBreaks *
-								( sin(beta1) + sin(breaks.front().getBeta()) );
-		//	TODO - Insert takes O(n) operations!
-		breaks.insert(breaks.begin(), Break(-numOfCalculatedBreaks,
+		else {
+			//	Determine the direction of the fraction's growth
+			double K1 = - breaks.front().getDn();
+			double K2 = - breaks.front().getDs();
+			double beta1 = breaks.front().getBeta() + calcAngleOfRotation(K1, K2);
+			double x1 = breaks.front().getCx() - half_lengthOfBreaks * 
+									( cos(beta1) + cos(breaks.front().getBeta()) );
+			double y1 = breaks.front().getCy() - half_lengthOfBreaks *
+									( sin(beta1) + sin(breaks.front().getBeta()) );
+			//	TODO - Insert takes O(n) operations!
+			breaks.insert(breaks.begin(), Break(-numOfCalculatedBreaks,
+						half_lengthOfBreaks, x1, y1, beta1, G, nu, -pressure, 0));
+			currentFracture = firstFracture;
+			field.clear();
+			while (*currentFracture != *this) {
+				field += currentFracture->calculateImpactInPoint(x1, y1);
+				currentFracture++;
+			}
+			breaks.front().setExternalImpact(field);
+			//std::cout << K1 << "\t" << K2 << std::endl;
+
+
+			K1 = - breaks.back().getDn();
+			K2 = - breaks.back().getDs();
+			beta1 = breaks.back().getBeta() + calcAngleOfRotation(K1, K2);
+			x1 = breaks.back().getCx() + half_lengthOfBreaks *
+					(cos(beta1) + cos(breaks.back().getBeta()));
+			y1 = breaks.back().getCy() + half_lengthOfBreaks *
+					(sin(beta1) + sin(breaks.back().getBeta()));
+			breaks.push_back( Break(numOfCalculatedBreaks,
 					half_lengthOfBreaks, x1, y1, beta1, G, nu, -pressure, 0));
-		currentFracture = firstFracture;
-		field.clear();
-		while (*currentFracture != *this) {
-			field += currentFracture->calculateImpactInPoint(x1, y1);
-			currentFracture++;
-		}
-		breaks.front().setExternalImpact(field);
-		//std::cout << K1 << "\t" << K2 << std::endl;
+			currentFracture = firstFracture;
+			field.clear();
+			while (*currentFracture != *this) {
+				field += currentFracture->calculateImpactInPoint(x1, y1);
+				currentFracture++;
+			}
+			breaks.back().setExternalImpact(field);
 
-
-		K1 = - breaks.back().getDn();
-		K2 = - breaks.back().getDs();
-		beta1 = breaks.back().getBeta() + calcAngleOfRotation(K1, K2);
-		x1 = breaks.back().getCx() + half_lengthOfBreaks *
-				(cos(beta1) + cos(breaks.back().getBeta()));
-		y1 = breaks.back().getCy() + half_lengthOfBreaks *
-				(sin(beta1) + sin(breaks.back().getBeta()));
-		breaks.push_back( Break(numOfCalculatedBreaks,
-				half_lengthOfBreaks, x1, y1, beta1, G, nu, -pressure, 0));
-		currentFracture = firstFracture;
-		field.clear();
-		while (*currentFracture != *this) {
-			field += currentFracture->calculateImpactInPoint(x1, y1);
-			currentFracture++;
-		}
-		breaks.back().setExternalImpact(field);
-		
-		numOfCalculatedBreaks += 2;
+			numOfCalculatedBreaks += 2;
+			}
 	}
-	
-	calculateBreaks();
-	
+	calculateBreaks();	
 //	std::vector<Break>::const_iterator brk = breaks.begin();
 //	while (brk != breaks.end()) {
 //		std::cout << *brk;
@@ -117,8 +111,8 @@ bool Fracture::calculateBreaks() {
 		int j = 0;
 		while (break2 != breaks.end()) {
 			break1->calculateImpactOf(*break2, Ass, Asn, Ans, Ann);
-			//std::cout << (*break1).getNumber() << "\t" << (*break2).getNumber() << std::endl;
-			//std::cout << Ass << "\t" << Asn << "\t" << Ans << "\t" << Ann << "\t" << std::endl;
+//			std::cout << (*break1).getNumber() << "\t" << (*break2).getNumber() << std::endl;
+//			std::cout << Ass << "\t" << Asn << "\t" << Ans << "\t" << Ann << "\t" << std::endl;
 			gsl_matrix_set(A, i, j, Ass);
 			gsl_matrix_set(A, i, j + 1, Asn);
 			gsl_matrix_set(A, i + 1, j, Ans);
@@ -126,15 +120,14 @@ bool Fracture::calculateBreaks() {
 			j += 2;
 			break2++;
 		}
-		//std::cout << std::endl;
+//		std::cout << std::endl;
 		gsl_vector_set(b, i, break1->getBs());
 		gsl_vector_set(b, i + 1, break1->getBn());
 		i += 2;
 		break1++;
-		//std::cout << (*break1).getNumber() << "\t" << (*break2).getNumber() << std::endl;
 	}
-	//std::cout << std::endl;
-	//std::cout << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
 
 	gsl_permutation *p = gsl_permutation_alloc(N);
 	int signum;	
@@ -150,42 +143,29 @@ bool Fracture::calculateBreaks() {
 	gsl_linalg_LU_decomp(A, p, &signum);
 	gsl_linalg_LU_solve(A, p, b, x);
 	
-//	gsl_blas_dgemv (CblasNoTrans, double alpha, A, x, 1.0, )
-	
-	
 	break1 = breaks.begin();
 	i = 0;
-	bool fractionIsStopped = false;
 	while (break1 != breaks.end()) {
-		double Dn = gsl_vector_get(x, i + 1);
 		break1->setDs(gsl_vector_get(x, i));
-		break1->setDn(Dn);
-		if (Dn > 0) {
-			break1->setDn(0);
-			fractionIsStopped = true;
-			std::cout << "Fraction is stopped!" << std::endl;
-		}
+		break1->setDn(gsl_vector_get(x, i + 1));
 		break1++;	
 		i += 2;
 	}
-	
+
 	gsl_matrix_free(A);
 	gsl_vector_free(x);
 	gsl_vector_free(b);
+	
+	bool fractionIsStopped = false;
+	if (breaks.front().getDn() > 0 || breaks.back().getDn() > 0)
+		fractionIsStopped = true;
 	
 	return fractionIsStopped;
 }
 
 double Fracture::calcAngleOfRotation(const double& K1, const double& K2) const {
-	double beta;
-	beta = 2 * atan(- 2 * K2 / (K1 + sqrt(K1 * K1 + 8 * K2 * K2)));
-	if ( (K1 + sqrt(K1 * K1 + 8 * K2 * K2)) == 0 ) {
-		if (K2 != 0) {
-			beta = - M_PI / 2;
-		} else {
-			std::cout << "Dn > 0!\n";
-		}
-	}
+	Field tmp;
+	double beta = 2 * tmp.arctan(- 2 * K2, K1 + sqrt(K1 * K1 + 8 * K2 * K2) );
 	return beta;
 }
 

@@ -5,7 +5,6 @@
 #include <string>
 #include <iostream>
 #include <gsl/gsl_linalg.h>
-#include <gsl/gsl_blas.h>
 #include "Break.hpp"
 #include "Field.hpp"
 
