@@ -104,7 +104,7 @@ void Stratum::drawField(mglGraph &gr) {
 			maxF = (maxF > fabs(_f)) ? maxF : fabs(_f);
 			f.a[i + N * j] = _f;
 		}
-	maxF = maxF / 0.9;
+	maxF = maxF / 10;
 	for (int i = 0; i < N; i += 1)
 		for (int j = 0; j < N; j += 1) {
 			f.a[i + N * j] = f.a[i + N * j] / maxF;

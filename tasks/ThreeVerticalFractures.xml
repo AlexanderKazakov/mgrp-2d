@@ -1,0 +1,21 @@
+<task>
+	<ranges Xmin="-2" Xmax="14" Ymin="-13" Ymax="13" />
+	<stratum G="15" nu="0.2" />
+	<fractures>
+		<fracture number="0">
+			<initial x="0" y="0" angle="90"/>
+			<elements half-length="0.5" number_of_elements="20"/>
+			<pressure type="polynomial" a="0" b="0" c="-1"/>
+		</fracture>
+		<fracture number="1">
+			<initial x="5" y="0" angle="90"/>
+			<elements half-length="0.5" number_of_elements="20"/>
+			<pressure type="polynomial" a="0" b="0" c="-1"/>
+		</fracture>
+		<fracture number="2">
+			<initial x="10" y="0" angle="90"/>
+			<elements half-length="0.5" number_of_elements="20"/>
+			<pressure type="polynomial" a="0" b="0" c="-1"/>
+		</fracture>
+	</fractures>
+</task>

@@ -1,0 +1,11 @@
+<task>
+	<ranges Xmin="-7" Xmax="7" Ymin="-5" Ymax="5" />
+	<stratum G="15" nu="0.2" />
+	<fractures>
+		<fracture number="0">
+			<initial x="0" y="0" angle="0"/>
+			<elements half-length="0.25" number_of_elements="20"/>
+			<pressure type="polynomial" a="1" b="0" c="-1"/>
+		</fracture>
+	</fractures>
+</task>

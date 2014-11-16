@@ -8,8 +8,7 @@
 class Break {
 public:
 	Break();
-	Break(int number, double a, double Cx, double Cy, double beta, double G, double nu,
-										double sigmaN, double sigmaS);
+	Break(int number, double a, double Cx, double Cy, double beta, double G, double nu);
 	~Break();
 	int getNumber() const;
 	double getBeta() const;
@@ -21,6 +20,7 @@ public:
 	double getDn() const;
 	void setDs(const double &_Ds);
 	void setDn(const double &_Dn);
+	void setSigmaN(const double &_sigmaN);
 	bool operator==(const Break &other) const;
 	bool operator!=(const Break &other) const;
 	bool operator<(const Break &other) const;

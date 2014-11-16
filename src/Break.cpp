@@ -1,11 +1,12 @@
 #include "Break.hpp"
 
 Break::Break() {
+	sigmaS = 0;
 }
 	
 Break::Break(int number, double a, double Cx, double Cy, double beta, double G,
-		double nu, double sigmaN, double sigmaS): number(number), a(a), Cx(Cx), 
-		Cy(Cy),	beta(beta), G(G), nu(nu), sigmaN(sigmaN), sigmaS(sigmaS) {
+	double nu): number(number), a(a), Cx(Cx), Cy(Cy), beta(beta), G(G), nu(nu) {
+	sigmaS = 0;
 }
 
 Break::~Break() {
@@ -112,6 +113,10 @@ void Break::setDs(const double &_Ds) {
 
 void Break::setDn(const double &_Dn) {
 	Dn = _Dn;
+}
+
+void Break::setSigmaN(const double& _sigmaN) {
+	sigmaN = _sigmaN;
 }
 
 double Break::F1(const double& x, const double& y) const {

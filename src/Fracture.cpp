@@ -4,11 +4,12 @@ Fracture::Fracture() {
 }
 
 Fracture::Fracture(int number, double x, double y, double beta, double h_length,
-		int numOfElms, double pressure, double G, double nu, std::string pressureType):
-		number(number), half_lengthOfBreaks(h_length), numOfBreaks(numOfElms),
-		pressure(pressure), G(G), nu(nu), pressureType(pressureType) {
+		int numOfElms, double a, double b, double c, double G, double nu, 
+		std::string pressureType): number(number), half_lengthOfBreaks(h_length),
+		numOfBreaks(numOfElms), G(G), nu(nu) {
 	
-	breaks.push_back( Break(0, h_length, x, y, beta, G, nu, -pressure, 0) );
+	breaks.push_back( Break(0, h_length, x, y, beta, G, nu) );
+	fluid.setType(a, b, c, pressureType);
 	numOfCalculatedBreaks = 1;
 }
 
@@ -36,6 +37,7 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 	}
 	//std::cout << field << std::endl;
 	breaks.front().setExternalImpact(field);
+	fluid.setPressure(breaks);
 	
 	//	While the fracture is not stopped
 	while ( (numOfCalculatedBreaks < numOfBreaks) ) {
@@ -55,8 +57,8 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 			double y1 = breaks.front().getCy() - half_lengthOfBreaks *
 									( sin(beta1) + sin(breaks.front().getBeta()) );
 			//	TODO - Insert takes O(n) operations!
-			breaks.insert(breaks.begin(), Break(-numOfCalculatedBreaks,
-						half_lengthOfBreaks, x1, y1, beta1, G, nu, -pressure, 0));
+			breaks.insert(breaks.begin(), Break(- (numOfCalculatedBreaks + 1) / 2,
+						half_lengthOfBreaks, x1, y1, beta1, G, nu));
 			currentFracture = firstFracture;
 			field.clear();
 			while (*currentFracture != *this) {
@@ -74,8 +76,8 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 					(cos(beta1) + cos(breaks.back().getBeta()));
 			y1 = breaks.back().getCy() + half_lengthOfBreaks *
 					(sin(beta1) + sin(breaks.back().getBeta()));
-			breaks.push_back( Break(numOfCalculatedBreaks,
-					half_lengthOfBreaks, x1, y1, beta1, G, nu, -pressure, 0));
+			breaks.push_back( Break((numOfCalculatedBreaks + 1) / 2,
+					half_lengthOfBreaks, x1, y1, beta1, G, nu));
 			currentFracture = firstFracture;
 			field.clear();
 			while (*currentFracture != *this) {
@@ -84,10 +86,11 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 			}
 			breaks.back().setExternalImpact(field);
 
+			fluid.setPressure(breaks);
 			numOfCalculatedBreaks += 2;
 			}
 	}
-	calculateBreaks();	
+	calculateBreaks();
 //	std::vector<Break>::const_iterator brk = breaks.begin();
 //	while (brk != breaks.end()) {
 //		std::cout << *brk;
