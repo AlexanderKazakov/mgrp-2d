@@ -36,11 +36,11 @@ private:
 	double Cx;	//	Center on x
 	double Cy;	//	Center on y
 	double beta;	//	Angle to x
-	double sigmaN;
-	double sigmaS;
+	double sigmaN;	//	Impact of the inner fluid
+	double sigmaS;	//	Impact of the inner fluid
 	double externalSigmaN;	//	Impact of already existing fractures 
 	double externalSigmaS;	//	Impact of already existing fractures
-	int number;
+	int number;	//	number for keeping in order
 	
 	double F1(const double &x, const double &y) const;
 	double F2(const double &x, const double &y) const;

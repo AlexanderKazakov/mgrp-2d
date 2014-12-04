@@ -8,13 +8,15 @@
 #include "Break.hpp"
 #include "Field.hpp"
 #include "Fluid.hpp"
+#include "Stratum.hpp"
+
+class Stratum;
 
 class Fracture {
 public:
 	Fracture();
-	Fracture(int number, double x, double y, double beta, double length,
-		int numOfBreaks, double a, double b, double c, double G, double nu,
-													std::string pressureType);
+	Fracture(Stratum *stratum, int number, double x, double y, double beta, double length,
+		int numOfBreaks, double a, double b, double c, std::string pressureType);
 	~Fracture();
 	int getNumber() const;
 	bool operator==(const Fracture &other) const;
@@ -33,6 +35,7 @@ private:
 	double half_lengthOfBreaks;
 	std::vector<Break> breaks;
 	Fluid fluid;
+	Stratum *stratum;
 	bool calculateBreaks();
 	double calcAngleOfRotation(const double &K1, const double &K2) const;
 };

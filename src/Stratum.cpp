@@ -14,6 +14,16 @@ void Stratum::setRheology(double _G, double _nu) {
 	G = _G;		nu = _nu;
 }
 
+void Stratum::getRheology(double &_G, double &_nu) {
+	_G = G;		_nu = nu;
+}
+
+void Stratum::setStresses(double _Sxx, double _Sxy, double _Syy) {
+	Sxx = _Sxx;
+	Sxy = _Sxy;
+	Syy = _Syy;
+}
+
 void Stratum::setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax) {
 	Xmin = _Xmin;
 	Xmax = _Xmax;
@@ -28,20 +38,23 @@ void Stratum::sortFractures() {
 
 int Stratum::calculateNextFracture() {
 	if (fractures.end() == currentFracture)
-		return 0;
+		return 1;
 	
 	currentFracture->calculate(fractures.begin());
 	currentFracture++;	
-	return 1;
+	return 0;
 }
 
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 	std::vector<Fracture>::iterator fracture = fractures.begin();
 	Field field;
-	while (fracture != fractures.end()) {
+	while (fracture != currentFracture) {
 		field += fracture->calculateImpactInPoint(x, y);
 		fracture++;
 	}
+	field.Sxx += Sxx;
+	field.Sxy += Sxy;
+	field.Syy += Syy;
 	return field;
 }
 
@@ -52,7 +65,7 @@ void Stratum::visualize() {
 
 	drawFractures(gr);
 	drawField(gr);
-	drawDirections(gr);
+	drawStressDirections(gr);
 	
 	gr.WriteFrame("fractures.png");
 }
@@ -113,7 +126,7 @@ void Stratum::drawField(mglGraph &gr) {
 	gr.Colorbar();
 }
 
-void Stratum::drawDirections(mglGraph &gr) {
+void Stratum::drawStressDirections(mglGraph &gr) {
 	int N = 23;
 	mglData x(N);
 	mglData y(N);

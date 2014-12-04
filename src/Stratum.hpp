@@ -7,15 +7,31 @@
 #include "Field.hpp"
 #include <mgl2/mgl.h>
 
+class Fracture;
+
 class Stratum {
 public:
 	Stratum();
 	~Stratum();
 	void addFracture(const Fracture &fracture);
 	void setRheology(double _G, double _nu);
+	void getRheology(double &_G, double &_nu);
+	void setStresses(double _Sxx, double _Sxy, double _Syy);
 	void setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax);
 	void sortFractures();
+	/**
+	 * Calculate next (by number) one fracture supposing that all previous 
+	 * fractures stay constant
+     * @return 0 if successful, 1 if all fractures are already calculated
+     */
 	int calculateNextFracture();
+	/**
+	 * Calculate field in point (x, y) caused by existing fractures and
+	 * external stresses
+     * @param x	x-coord of point
+     * @param y y-coord of point
+     * @return Actual Field in (x, y)
+     */
 	Field calculateImpactInPoint(const double &x, const double &y);
 	void visualize();
 private:
@@ -23,11 +39,14 @@ private:
 	double nu;	//	Poisson's ratio
 	double E;	//	Young's modulus	E = 2 * G * (1 + nu)
 	double Xmin, Xmax, Ymin, Ymax;	//	Ranges for plot
+	double Sxx;	//	
+	double Sxy;	//	External stresses
+	double Syy;	//
 	std::vector<Fracture> fractures;
 	std::vector<Fracture>::iterator currentFracture;
 	void drawField(mglGraph &gr);
 	void drawFractures(mglGraph &gr);
-	void drawDirections(mglGraph &gr);
+	void drawStressDirections(mglGraph &gr);
 };
 
 #endif	/* STRATUM_HPP */

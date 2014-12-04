@@ -3,11 +3,12 @@
 Fracture::Fracture() {
 }
 
-Fracture::Fracture(int number, double x, double y, double beta, double h_length,
-		int numOfElms, double a, double b, double c, double G, double nu, 
-		std::string pressureType): number(number), half_lengthOfBreaks(h_length),
-		numOfBreaks(numOfElms), G(G), nu(nu) {
-	
+Fracture::Fracture(Stratum *stratum, int number, double x, double y, double beta,
+		double h_length, int numOfElms, double a, double b, double c, std::string pressureType):
+		stratum(stratum), number(number), half_lengthOfBreaks(h_length), numOfBreaks(numOfElms) {
+	double _G, _nu;
+	stratum->getRheology(_G, _nu);
+	G = _G;	nu = _nu;
 	breaks.push_back( Break(0, h_length, x, y, beta, G, nu) );
 	fluid.setType(a, b, c, pressureType);
 	numOfCalculatedBreaks = 1;
@@ -27,16 +28,9 @@ Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
 }
 
 void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
-	
-	Field field;
-	std::vector<Fracture>::const_iterator currentFracture = firstFracture;
-	while (*currentFracture != *this) {
-		field += currentFracture->calculateImpactInPoint(breaks.front().getCx(),
-														breaks.front().getCy());
-		currentFracture++;
-	}
-	//std::cout << field << std::endl;
-	breaks.front().setExternalImpact(field);
+
+	breaks.front().setExternalImpact(stratum->calculateImpactInPoint
+								(breaks.front().getCx(), breaks.front().getCy()));
 	fluid.setPressure(breaks);
 	
 	//	While the fracture is not stopped
@@ -59,15 +53,8 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 			//	TODO - Insert takes O(n) operations!
 			breaks.insert(breaks.begin(), Break(- (numOfCalculatedBreaks + 1) / 2,
 						half_lengthOfBreaks, x1, y1, beta1, G, nu));
-			currentFracture = firstFracture;
-			field.clear();
-			while (*currentFracture != *this) {
-				field += currentFracture->calculateImpactInPoint(x1, y1);
-				currentFracture++;
-			}
-			breaks.front().setExternalImpact(field);
-			//std::cout << K1 << "\t" << K2 << std::endl;
-
+			breaks.front().setExternalImpact(stratum->calculateImpactInPoint
+								(breaks.front().getCx(), breaks.front().getCy()));
 
 			K1 = - breaks.back().getDn();
 			K2 = - breaks.back().getDs();
@@ -78,25 +65,14 @@ void Fracture::calculate(std::vector<Fracture>::const_iterator firstFracture) {
 					(sin(beta1) + sin(breaks.back().getBeta()));
 			breaks.push_back( Break((numOfCalculatedBreaks + 1) / 2,
 					half_lengthOfBreaks, x1, y1, beta1, G, nu));
-			currentFracture = firstFracture;
-			field.clear();
-			while (*currentFracture != *this) {
-				field += currentFracture->calculateImpactInPoint(x1, y1);
-				currentFracture++;
-			}
-			breaks.back().setExternalImpact(field);
+			breaks.back().setExternalImpact(stratum->calculateImpactInPoint
+								(breaks.back().getCx(), breaks.back().getCy()));
 
 			fluid.setPressure(breaks);
 			numOfCalculatedBreaks += 2;
 			}
 	}
 	calculateBreaks();
-//	std::vector<Break>::const_iterator brk = breaks.begin();
-//	while (brk != breaks.end()) {
-//		std::cout << *brk;
-//		brk++;
-//	}
-//	std::cout << std::endl;
 }
 
 bool Fracture::calculateBreaks() {

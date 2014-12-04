@@ -13,13 +13,14 @@ void loadTask(Stratum &stratum, const char* taskfile);
 int main(int argc, char** argv) {
 	int opt = 0;
 	char *taskfile;
-	while ((opt = getopt(argc, argv, "h:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "t:")) != -1) {
 		switch (opt) {
-			case 'h': std::cout << "" << std::endl;
-				break;
 			case 't': taskfile = optarg;
 				break;
-			case '?': exit(-1);
+			case '?': {
+				std::cout << "Usage:	./mgrp-2d -t name_of_taskfile\n";
+				exit(-1);
+			}
 		}
 	}
 	
@@ -27,7 +28,7 @@ int main(int argc, char** argv) {
 	
 	loadTask(stratum, taskfile);
 
-	while (stratum.calculateNextFracture());
+	while (!stratum.calculateNextFracture());
 
 	stratum.visualize();
 	
@@ -38,15 +39,25 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 
 	TiXmlDocument *xml_file = new TiXmlDocument(taskfile);
 	if(!xml_file->LoadFile()) {
-		std::cout << "Bad task file" << std::endl;
-		return;
+		std::cout << "Usage:	./mgrp-2d -t name_of_taskfile\n" << 
+									"Specified taskfile is invalid\n";
+		exit(-1);
 	}
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
 	
 	TiXmlElement *xml_stratum = xml_task->FirstChildElement("stratum");
-	double G = atof( xml_stratum->Attribute("G") );
-	double nu = atof( xml_stratum->Attribute("nu") );
+	TiXmlElement *xml_elastic_modules = xml_stratum->FirstChildElement("elastic_modules");
+	double G = atof( xml_elastic_modules->Attribute("G") );
+	double nu = atof( xml_elastic_modules->Attribute("nu") );
 	stratum.setRheology(G, nu);
+
+	TiXmlElement *xml_external_stresses = xml_stratum->FirstChildElement("external_stresses");
+	double Sxx = atof(xml_external_stresses->Attribute("Sxx"));
+	double Sxy = atof(xml_external_stresses->Attribute("Sxy"));
+	double Syy = atof(xml_external_stresses->Attribute("Syy"));
+	stratum.setStresses(Sxx, Sxy, Syy);
+	
+
 	TiXmlElement *xml_ranges = xml_task->FirstChildElement("ranges");
 	double Xmin = atof(xml_ranges->Attribute("Xmin"));
 	double Xmax = atof(xml_ranges->Attribute("Xmax"));
@@ -73,8 +84,8 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
 		
-		stratum.addFracture( Fracture(number, x, y, beta, half_length, numOfElems,
-												a, b, c, G, nu, pressureType) );
+		stratum.addFracture( Fracture(&stratum, number, x, y, beta, half_length,
+									numOfElems, a, b, c, pressureType) );
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 	}
 	stratum.sortFractures();
