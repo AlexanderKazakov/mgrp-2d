@@ -2,7 +2,6 @@
 #define	FLUID_HPP
 
 #include <string>
-#include <vector>
 #include "Break.hpp"
 
 class Fluid {
@@ -10,7 +9,7 @@ public:
 	Fluid();
 	~Fluid();
 	void setType(double _a, double _b, double _c, std::string _pressureType);
-	void setPressure(std::vector<Break> &breaks);
+	void calculatePressure(Break *breaks, int NumOfCalcBrks);
 private:
 	double a, b, c;
 	std::string pressureType;

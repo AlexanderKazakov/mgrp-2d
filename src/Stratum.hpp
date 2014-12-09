@@ -13,18 +13,18 @@ class Stratum {
 public:
 	Stratum();
 	~Stratum();
-	void addFracture(const Fracture &fracture);
+	void addFracture(int number, double x, double y, double beta, double h_length,
+		int numOfBreaks, double a, double b, double c, std::string pressureType);
 	void setRheology(double _G, double _nu);
 	void getRheology(double &_G, double &_nu);
 	void setStresses(double _Sxx, double _Sxy, double _Syy);
 	void setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax);
-	void sortFractures();
+	void reserve(int numberOfFractures);
 	/**
-	 * Calculate next (by number) one fracture supposing that all previous 
+	 * Calculate next one fracture supposing that all previous 
 	 * fractures stay constant
-     * @return 0 if successful, 1 if all fractures are already calculated
      */
-	int calculateNextFracture();
+	void calculate();
 	/**
 	 * Calculate field in point (x, y) caused by existing fractures and
 	 * external stresses

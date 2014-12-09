@@ -25,11 +25,8 @@ int main(int argc, char** argv) {
 	}
 	
 	Stratum stratum;
-	
 	loadTask(stratum, taskfile);
-
-	while (!stratum.calculateNextFracture());
-
+	stratum.calculate();
 	stratum.visualize();
 	
 	return 0;
@@ -67,8 +64,14 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	
 	TiXmlElement *xml_fractures = xml_task->FirstChildElement("fractures");
 	TiXmlElement *xml_fracture = xml_fractures->FirstChildElement("fracture");
+	int numberOfFractures = 0;
 	while (xml_fracture != NULL) {
-		
+		numberOfFractures++;
+		xml_fracture = xml_fracture->NextSiblingElement("fracture");
+	}
+	stratum.reserve(numberOfFractures);
+	xml_fracture = xml_fractures->FirstChildElement("fracture");
+	while (xml_fracture != NULL) {
 		int number = atoi(xml_fracture->Attribute("number"));
 		TiXmlElement *initial = xml_fracture->FirstChildElement("initial");
 		double x = atof(initial->Attribute("x"));
@@ -83,10 +86,10 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double b = atof(xml_pressure->Attribute("b"));
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
-		
-		stratum.addFracture( Fracture(&stratum, number, x, y, beta, half_length,
-									numOfElems, a, b, c, pressureType) );
+
+		stratum.addFracture(number, x, y, beta, half_length,
+									numOfElems, a, b, c, pressureType);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
+
 	}
-	stratum.sortFractures();
 }

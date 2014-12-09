@@ -6,8 +6,11 @@ Stratum::Stratum() {
 Stratum::~Stratum() {
 }
 
-void Stratum::addFracture(const Fracture& fracture) {
-	fractures.push_back(fracture);
+void Stratum::addFracture(int number, double x, double y, double beta, double h_length,
+		int numOfBreaks, double a, double b, double c, std::string pressureType) {
+	fractures.push_back(Fracture(this, number, h_length,
+											numOfBreaks, a, b, c, pressureType));
+	fractures.back().allocateBreaks(x, y, beta);
 }
 
 void Stratum::setRheology(double _G, double _nu) {
@@ -31,18 +34,16 @@ void Stratum::setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax) 
 	Ymax = _Ymax;		
 }
 
-void Stratum::sortFractures() {
-	std::sort(fractures.begin(), fractures.end());
-	currentFracture = fractures.begin();
+void Stratum::reserve(int numberOfFractures) {
+	fractures.reserve(numberOfFractures);
 }
 
-int Stratum::calculateNextFracture() {
-	if (fractures.end() == currentFracture)
-		return 1;
-	
-	currentFracture->calculate(fractures.begin());
-	currentFracture++;	
-	return 0;
+void Stratum::calculate() {
+	currentFracture = fractures.begin();
+	while (currentFracture != fractures.end()) {	
+		currentFracture->calculate();
+		currentFracture++;	
+	}
 }
 
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) {

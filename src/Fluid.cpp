@@ -6,29 +6,25 @@ Fluid::Fluid() {
 Fluid::~Fluid() {
 }
 
-void Fluid::setPressure(std::vector<Break> &breaks) {
-	std::vector<Break>::iterator break1 = breaks.begin();	
+void Fluid::calculatePressure(Break* breaks, int NumOfCalcBrks) {
 	if ( (pressureType == "lag") || (pressureType == "const") ) {
-		while (break1 != breaks.end()) {
-			break1->setSigmaN(c);
-			break1++;
+		for (int i = -NumOfCalcBrks/2; i <= NumOfCalcBrks/2; i++) {
+			breaks[i].setSigmaN(c);
 		}
-		if ( (pressureType == "lag") && (breaks.size() > 2) ) {
-			breaks.front().setSigmaN(0);
-			breaks.back().setSigmaN(0);
+		if ( (pressureType == "lag") && (NumOfCalcBrks > 2) ) {
+			breaks[-NumOfCalcBrks/2].setSigmaN(0);
+			breaks[NumOfCalcBrks/2].setSigmaN(0);
 		}
 	}
 	if ( pressureType == "polynomial" ) {
-		while (break1 != breaks.end()) {
-			double t = (2.0 * break1->getNumber()) / (breaks.size() - 1);
-			break1->setSigmaN(a*t*t + b*t + c);
-			//std::cout << a*t*t + b*t + c << "\t";
-			break1++;
+		for (int i = -NumOfCalcBrks/2; i <= NumOfCalcBrks/2; i++) {
+			double t = (2.0 * i) / (NumOfCalcBrks - 1);
+			breaks[i].setSigmaN(a*t*t + b*t + c);
 		}
-		//std::cout << std::endl;
-		if (breaks.size() == 1)
-			breaks.front().setSigmaN(c);
+		if (NumOfCalcBrks == 1)
+			breaks[0].setSigmaN(c);
 	}
+
 }
 
 void Fluid::setType(double _a, double _b, double _c, std::string _pressureType) {

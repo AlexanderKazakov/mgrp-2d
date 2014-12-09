@@ -1,11 +1,10 @@
 #include "Break.hpp"
 
 Break::Break() {
-	sigmaS = 0;
 }
 	
-Break::Break(int number, double a, double Cx, double Cy, double beta, double G,
-	double nu): number(number), a(a), Cx(Cx), Cy(Cy), beta(beta), G(G), nu(nu) {
+Break::Break(double a, double Cx, double Cy, double beta, double G,
+	double nu): a(a), Cx(Cx), Cy(Cy), beta(beta), G(G), nu(nu) {
 	sigmaS = 0;
 }
 
@@ -61,22 +60,6 @@ Field Break::calculateImpactInPoint(const double &x_glob, const double &y_glob) 
 			2 * G * Dn * (-y * (cos(2 * beta) * F6(x, y) - sin(2 * beta) * F7(x, y)));
 
 	return field;
-}
-
-bool Break::operator==(const Break &other) const {
-	return ( number == other.getNumber() );
-}
-
-bool Break::operator!=(const Break &other) const {
-	return ( number != other.getNumber() );
-}
-
-bool Break::operator<(const Break &other) const {
-	return ( number < other.getNumber() );
-}
-
-int Break::getNumber() const {
-	return number;
 }
 
 double Break::getBeta() const {

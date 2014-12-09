@@ -8,9 +8,8 @@
 class Break {
 public:
 	Break();
-	Break(int number, double a, double Cx, double Cy, double beta, double G, double nu);
+	Break(double a, double Cx, double Cy, double beta, double G, double nu);
 	~Break();
-	int getNumber() const;
 	double getBeta() const;
 	double getCx() const;
 	double getCy() const;
@@ -21,9 +20,6 @@ public:
 	void setDs(const double &_Ds);
 	void setDn(const double &_Dn);
 	void setSigmaN(const double &_sigmaN);
-	bool operator==(const Break &other) const;
-	bool operator!=(const Break &other) const;
-	bool operator<(const Break &other) const;
 	void calculateImpactOf(const Break &break2, double &Ass, double &Asn, double &Ans, double &Ann);
 	Field calculateImpactInPoint(const double &x_glob, const double &y_glob) const;
 	void setExternalImpact(Field field);
@@ -40,7 +36,6 @@ private:
 	double sigmaS;	//	Impact of the inner fluid
 	double externalSigmaN;	//	Impact of already existing fractures 
 	double externalSigmaS;	//	Impact of already existing fractures
-	int number;	//	number for keeping in order
 	
 	double F1(const double &x, const double &y) const;
 	double F2(const double &x, const double &y) const;
@@ -54,10 +49,9 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Break &brk) {
-		os //<< brk.getCx() << "\t" << brk.getCy() 
-				<< "\t" << brk.getDs() 
-				<< "\t" << brk.getDn() //<< std::endl << brk.getBs()
-				//<< "\t" << brk.getBn()  
+		os << brk.getCx() << "\t" << brk.getCy() 
+				<< "\t" << brk.getDs() << "\t" << brk.getDn() 
+				<< "\t" << brk.getBs() << "\t" << brk.getBn()  
 				<< std::endl;
 		return os;
 	};
