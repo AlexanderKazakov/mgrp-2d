@@ -8,6 +8,19 @@
 #include"Stratum.hpp"
 #include"Fracture.hpp"
 
+/**
+ * A project for calculation of fractures' propagation 
+ * with multistage hydraulic fracturing in stratum 
+ * using 2D-approach in quasi-static linear elastic theory.
+ * 
+ * Used numerical method is displacement discontinuity method 
+ * by Crouch (Crouch, S.L. and Starfield, A.M. (1983).
+ * Boundary Element Methods in Solid Mechanics) with a few
+ * improvements.
+ *  
+ */
+
+
 void loadTask(Stratum &stratum, const char* taskfile);
 
 int main(int argc, char** argv) {
@@ -84,6 +97,8 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
 		int numOfElems = atoi(elements->Attribute("number_of_elements"));
+		// Number of elements in fracture is always odd because 
+		// it doesn't matter but is very helpful
 		if (numOfElems % 2 == 0) numOfElems += 1;
 		double half_length = atof(elements->Attribute("half-length"));
 		

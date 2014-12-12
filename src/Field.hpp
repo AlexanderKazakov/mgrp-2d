@@ -4,19 +4,41 @@
 #include <cmath>
 #include <iostream>
 
+/**
+ * Class for some auxiliary actions with linear elastic field in some point
+ * 
+ */
+
+
 class Field {
 public:
 	Field();
 	~Field();
-	void clear();
+	/**
+	 * Add other field to this field
+     * @param other field to add
+     */
 	void operator+=(const Field &other);
+	/**
+	 * Calculate field in the same point in rotated axis
+     * @param beta rotation angle of new axis to old axis
+     * @return field in rotated axis
+     */
 	Field inRotatedAxis(double beta);
+	/**
+     * @return angle to x of direction of maximal tensile stresses
+     */
 	double directionOfMaxTensileStress();
+	/**
+     * @return Sxx + Syy 
+     */
 	double Trace();
+	/**
+     * @return maximal eigenvalue of stress tensor 
+     */
 	double Smax();
 	/**
 	 * Calculate arctan of (a / b) taking into account the infinities
-	 * 
      * @param a	numerator
      * @param b	denominator
      * @return arctan (a / b)

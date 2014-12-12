@@ -14,7 +14,8 @@ taskFiles = ["OneStraightDiagonalFractureConstPressure", \
 			"OneCurveFracturePolynomialPressure", \
 			"ThreeHorizontalFracturesConstPressureSimpleRotation", \
 			"ThreeHorizontalFracturesConstPressure", \
-			"ThreeVerticalFracturesPolynomialPressure"]
+			"ThreeVerticalFracturesPolynomialPressure", \
+			"ThreeVerticalFracturesConstPressure"]
 
 for taskFile in taskFiles:
 	os.system('rm -f results/test1/' + taskFile + '.png')

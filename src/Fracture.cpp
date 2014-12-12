@@ -9,6 +9,7 @@ Fracture::Fracture(Stratum *stratum, int number, double h_length, int numOfElms,
 		std::string rotation): stratum(stratum), number(number), tip(tip),
 		half_lengthOfBreaks(h_length), numOfBrks(numOfElms), rotation(rotation) {
 	breaks = NULL;
+	fractionIsStopped = false;
 	double _G, _nu;
 	stratum->getRheology(_G, _nu);
 	G = _G;	nu = _nu;
@@ -19,11 +20,13 @@ Fracture::Fracture(Stratum *stratum, int number, double h_length, int numOfElms,
 
 Fracture::~Fracture() {
 	if (breaks) {
+		// Deletion of dynamical allocated memory (!)
 		delete [] breaks;
 	}
 }
 
 void Fracture::allocateBreaks(double x, double y, double beta) {
+	// Dynamical memory allocation (!)
 	breaks = new Break[numOfBrks];
 	breaks[middle] = Break(half_lengthOfBreaks, x, y, beta, G, nu);
 }
@@ -41,7 +44,7 @@ void Fracture::calculate() {
 
 	fluid.calculatePressure(&(breaks[middle]), numOfCalcBrks);
 	
-	bool fractionIsStopped = calculateBreaks();
+	calculateBreaks();
 	if (fractionIsStopped) {
 		numOfBrks = numOfCalcBrks;
 		std::cout << "Fracture number " << number << " is stopped!\n";
@@ -52,6 +55,8 @@ void Fracture::calculate() {
 		
 		addNewBreaks(deltaBeta1, deltaBeta2);
 		if (rotation == "predictor-corrector") {
+			//	Clarifying the direction of fracture's growth like it is
+			//	usually done in "predictor-corrector" methods
 			calculateBreaks();
 			deltaBeta1 = (calcAngleOfRotation(breaks[front]) + deltaBeta1) / 2;
 			deltaBeta2 = (calcAngleOfRotation(breaks[back]) + deltaBeta2) / 2;
@@ -59,7 +64,7 @@ void Fracture::calculate() {
 			back--; front++; numOfCalcBrks -= 2;
 			addNewBreaks(deltaBeta1, deltaBeta2);
 		}
-		bool fractionIsStopped = calculateBreaks();
+		calculateBreaks();
 		if (fractionIsStopped) {
 			numOfBrks = numOfCalcBrks;
 			std::cout << "Fracture number " << number << " is stopped!\n";
@@ -67,7 +72,7 @@ void Fracture::calculate() {
 	}
 }
 
-bool Fracture::calculateBreaks() {
+void Fracture::calculateBreaks() {
 	double Ass, Asn, Ans, Ann;
 	int N = 2 * numOfCalcBrks;
 	gsl_matrix *A = gsl_matrix_alloc(N, N);
@@ -110,12 +115,8 @@ bool Fracture::calculateBreaks() {
 	gsl_vector_free(x);
 	gsl_vector_free(b);
 	
-	bool fractionIsStopped = false;
-	if (breaks[front].Dn > 0 || 
-				breaks[back].Dn > 0)
+	if (breaks[front].Dn > 0 || breaks[back].Dn > 0)
 		fractionIsStopped = true;
-	
-	return fractionIsStopped;
 }
 
 double Fracture::calcAngleOfRotation(const Break &break1) const {

@@ -78,7 +78,6 @@ void Stratum::drawFractures(mglGraph& gr) {
 		int N = fracture->getNumOfBreaks() + 1;
 		double *_x = new double[N];
 		double *_y = new double[N];
-		// TODO - remove _x and _y
 		fracture->getPointsForPlot(_x, _y);
 		mglData x;
 		mglData y;

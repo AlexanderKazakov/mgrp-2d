@@ -19,10 +19,13 @@ void Break::setExternalImpact(Field field) {
 void Break::calculateImpactOn(const Break& break2, double& Ass, double& Asn,
 													double& Ans, double& Ann) {
 	double gamma = break2.beta - beta;
+	// x and y are coordinates of break2 in the system 
+	// of coordinates of this element.
 	double x = (break2.Cx - Cx) * cos(beta) +
 								(break2.Cy - Cy) * sin(beta);
 	double y = - (break2.Cx - Cx) * sin(beta) +
 								(break2.Cy - Cy) * cos(beta);
+	
 	Ass = 2*G * ( - sin(2 * gamma) * F4(x, y) - cos(2 * gamma) * F5(x, y) - 
 			y * (sin(2*gamma) * F6(x, y) - cos(2*gamma) * F7(x, y)) );
 	Asn =-2*G * y * (cos(2*gamma) * F6(x, y) + sin(2*gamma) * F7(x, y));
@@ -32,6 +35,8 @@ void Break::calculateImpactOn(const Break& break2, double& Ass, double& Asn,
 }
 
 Field Break::calculateImpactInPoint(const double &x_glob, const double &y_glob) const {
+	// x and y are coordinates of given point in the system 
+	// of coordinates of this element.
 	double x = (x_glob - Cx) * cos(beta) + (y_glob - Cy) * sin(beta);
 	double y = (y_glob - Cy) * cos(beta) - (x_glob - Cx) * sin(beta);
 	

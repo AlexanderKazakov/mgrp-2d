@@ -7,10 +7,6 @@ Field::Field() {
 Field::~Field() {
 }
 
-void Field::clear() {
-	Sxx = Sxy = Syy = Ux = Uy = 0;
-}
-
 void Field::operator+=(const Field &other) {
 	Sxx += other.Sxx;
 	Sxy += other.Sxy;
