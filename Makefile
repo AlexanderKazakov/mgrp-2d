@@ -2,7 +2,7 @@ CC=g++
 CFLAGS=-c
 OBJDIR=src/
 SOURCES=$(OBJDIR)main.cpp $(OBJDIR)Stratum.cpp $(OBJDIR)Fluid.cpp\
-$(OBJDIR)Fracture.cpp $(OBJDIR)Break.cpp $(OBJDIR)Field.cpp
+$(OBJDIR)Fracture.cpp $(OBJDIR)Break.cpp $(OBJDIR)Field.cpp 
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=mgrp-2d	
 

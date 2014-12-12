@@ -42,6 +42,10 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	}
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
 	
+	TiXmlElement *xml_system = xml_task->FirstChildElement("system");
+	std::string tip = xml_system->Attribute("tip");
+	std::string rotation = xml_system->Attribute("rotation");
+	
 	TiXmlElement *xml_stratum = xml_task->FirstChildElement("stratum");
 	TiXmlElement *xml_elastic_modules = xml_stratum->FirstChildElement("elastic_modules");
 	double G = atof( xml_elastic_modules->Attribute("G") );
@@ -53,7 +57,6 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	double Sxy = atof(xml_external_stresses->Attribute("Sxy"));
 	double Syy = atof(xml_external_stresses->Attribute("Syy"));
 	stratum.setStresses(Sxx, Sxy, Syy);
-	
 
 	TiXmlElement *xml_ranges = xml_task->FirstChildElement("ranges");
 	double Xmin = atof(xml_ranges->Attribute("Xmin"));
@@ -73,14 +76,17 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	xml_fracture = xml_fractures->FirstChildElement("fracture");
 	while (xml_fracture != NULL) {
 		int number = atoi(xml_fracture->Attribute("number"));
+		
 		TiXmlElement *initial = xml_fracture->FirstChildElement("initial");
 		double x = atof(initial->Attribute("x"));
 		double y = atof(initial->Attribute("y"));
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
+		
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
 		int numOfElems = atoi(elements->Attribute("number_of_elements"));
 		if (numOfElems % 2 == 0) numOfElems += 1;
 		double half_length = atof(elements->Attribute("half-length"));
+		
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
 		double a = atof(xml_pressure->Attribute("a"));
 		double b = atof(xml_pressure->Attribute("b"));
@@ -88,7 +94,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		std::string pressureType = (xml_pressure->Attribute("type"));
 
 		stratum.addFracture(number, x, y, beta, half_length,
-									numOfElems, a, b, c, pressureType);
+						numOfElems, a, b, c, pressureType, tip, rotation);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 
 	}

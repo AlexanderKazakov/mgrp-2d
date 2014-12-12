@@ -16,13 +16,13 @@ void Break::setExternalImpact(Field field) {
 	externalSigmaS = field.inRotatedAxis(beta).Sxy;
 }
 
-void Break::calculateImpactOf(const Break& break2, double& Ass, double& Asn,
+void Break::calculateImpactOn(const Break& break2, double& Ass, double& Asn,
 													double& Ans, double& Ann) {
-	double gamma = beta - break2.getBeta();
-	double x = (Cx - break2.getCx()) * cos(break2.getBeta()) +
-								(Cy - break2.getCy()) * sin(break2.getBeta());
-	double y = - (Cx - break2.getCx()) * sin(break2.getBeta()) +
-								(Cy - break2.getCy()) * cos(break2.getBeta());
+	double gamma = break2.beta - beta;
+	double x = (break2.Cx - Cx) * cos(beta) +
+								(break2.Cy - Cy) * sin(beta);
+	double y = - (break2.Cx - Cx) * sin(beta) +
+								(break2.Cy - Cy) * cos(beta);
 	Ass = 2*G * ( - sin(2 * gamma) * F4(x, y) - cos(2 * gamma) * F5(x, y) - 
 			y * (sin(2*gamma) * F6(x, y) - cos(2*gamma) * F7(x, y)) );
 	Asn =-2*G * y * (cos(2*gamma) * F6(x, y) + sin(2*gamma) * F7(x, y));
@@ -62,24 +62,12 @@ Field Break::calculateImpactInPoint(const double &x_glob, const double &y_glob) 
 	return field;
 }
 
-double Break::getBeta() const {
-	return beta;
+double Break::K1() const {
+	return G / 4 / (1 - nu) * sqrt(2 * M_PI / a) * Dn;
 }
 
-double Break::getCx() const {
-	return Cx;
-}
-
-double Break::getCy() const {
-	return Cy;
-}
-
-double Break::getDs() const {
-	return Ds;
-}
-
-double Break::getDn() const {
-	return Dn;
+double Break::K2() const {
+	return G / 4 / (1 - nu) * sqrt(2 * M_PI / a) * Ds;
 }
 
 double Break::getBs() const {
@@ -88,14 +76,6 @@ double Break::getBs() const {
 
 double Break::getBn() const {
 	return sigmaN - externalSigmaN;
-}
-
-void Break::setDs(const double &_Ds) {
-	Ds = _Ds;
-}
-
-void Break::setDn(const double &_Dn) {
-	Dn = _Dn;
 }
 
 void Break::setSigmaN(const double& _sigmaN) {

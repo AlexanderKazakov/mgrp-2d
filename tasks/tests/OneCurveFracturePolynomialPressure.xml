@@ -3,13 +3,13 @@
 	<ranges Xmin="-7" Xmax="7" Ymin="-5" Ymax="5" />
 	<stratum> 
 		<elastic_modules G="15" nu="0.2"/> 
-		<external_stresses Sxx="0" Sxy="0" Syy="0"/>
+		<external_stresses Sxx="0" Sxy="1" Syy="0"/>
 	</stratum>
 	<fractures>
 		<fracture number="0">
 			<initial x="0" y="0" angle="0"/>
 			<elements half-length="0.25" number_of_elements="20"/>
-			<pressure type="polynomial" a="1" b="0" c="-1"/>
+			<pressure type="polynomial" a="0.1" b="0" c="-0.1"/>
 		</fracture>
 	</fractures>
 </task>

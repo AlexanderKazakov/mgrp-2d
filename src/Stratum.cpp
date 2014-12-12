@@ -7,9 +7,10 @@ Stratum::~Stratum() {
 }
 
 void Stratum::addFracture(int number, double x, double y, double beta, double h_length,
-		int numOfBreaks, double a, double b, double c, std::string pressureType) {
+		int numOfBreaks, double a, double b, double c, std::string pressureType,
+		std::string tip, std::string rotation) {
 	fractures.push_back(Fracture(this, number, h_length,
-											numOfBreaks, a, b, c, pressureType));
+					numOfBreaks, a, b, c, pressureType, tip, rotation));
 	fractures.back().allocateBreaks(x, y, beta);
 }
 
@@ -66,7 +67,7 @@ void Stratum::visualize() {
 
 	drawFractures(gr);
 	drawField(gr);
-	drawStressDirections(gr);
+//	drawStressDirections(gr);
 	
 	gr.WriteFrame("fractures.png");
 }
@@ -83,16 +84,6 @@ void Stratum::drawFractures(mglGraph& gr) {
 		mglData y;
 		x.Set(_x, N);
 		y.Set(_y, N);
-//		
-//		double _Xmin = x.Minimal();
-//		double _Xmax = x.Maximal();
-//		double _Ymin = y.Minimal();
-//		double _Ymax = y.Maximal();
-//		Xmin = (Xmin < _Xmin) ? Xmin : _Xmin;
-//		Xmax = (Xmax > _Xmax) ? Xmax : _Xmax;
-//		Ymin = (Ymin < _Ymin) ? Ymin : _Ymin;
-//		Ymax = (Ymax > _Ymax) ? Ymax : _Ymax;
-//		
 		gr.Plot(x, y, ".k");
 		delete [] _x;
 		delete [] _y;
@@ -141,9 +132,10 @@ void Stratum::drawStressDirections(mglGraph &gr) {
 		for (int j = 1; j < N; j += 1) {
 			double _x = x.a[i];
 			double _y = y.a[j];
-			double Smax = calculateImpactInPoint(_x, _y).Smax() * 5;			
-			ax.a[i + N * j] = Smax * cos(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
-			ay.a[i + N * j] = Smax * sin(calculateImpactInPoint(_x, _y).directionOfMaxTensileStress());
+			Field localField = calculateImpactInPoint(_x, _y);
+			double Smax = localField.Smax() * 5;			
+			ax.a[i + N * j] = Smax * cos(localField.directionOfMaxTensileStress());
+			ay.a[i + N * j] = Smax * sin(localField.directionOfMaxTensileStress());
 		}
 	gr.Vect(x, y, ax, ay, "0");
 	for (int i = 1; i < N; i += 1)

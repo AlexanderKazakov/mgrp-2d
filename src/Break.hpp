@@ -7,31 +7,27 @@
 
 class Break {
 public:
-	Break();
-	Break(double a, double Cx, double Cy, double beta, double G, double nu);
-	~Break();
-	double getBeta() const;
-	double getCx() const;
-	double getCy() const;
-	double getBs() const;
-	double getBn() const;
-	double getDs() const;
-	double getDn() const;
-	void setDs(const double &_Ds);
-	void setDn(const double &_Dn);
-	void setSigmaN(const double &_sigmaN);
-	void calculateImpactOf(const Break &break2, double &Ass, double &Asn, double &Ans, double &Ann);
-	Field calculateImpactInPoint(const double &x_glob, const double &y_glob) const;
-	void setExternalImpact(Field field);
-	
-private:
-	double G, nu;	//	Rheology parameters
 	double Ds;	//	Break along
 	double Dn;	//	Break across
-	double a;	//	Half-length
 	double Cx;	//	Center on x
 	double Cy;	//	Center on y
 	double beta;	//	Angle to x
+	
+	Break();
+	Break(double a, double Cx, double Cy, double beta, double G, double nu);
+	~Break();
+	double getBs() const;
+	double getBn() const;
+	void setSigmaN(const double &_sigmaN);
+	void calculateImpactOn(const Break &break2, double &Ass, double &Asn, double &Ans, double &Ann);
+	Field calculateImpactInPoint(const double &x_glob, const double &y_glob) const;
+	void setExternalImpact(Field field);
+	double K1() const;
+	double K2() const;
+	
+private:
+	double G, nu;	//	Rheology parameters
+	double a;	//	Half-length
 	double sigmaN;	//	Impact of the inner fluid
 	double sigmaS;	//	Impact of the inner fluid
 	double externalSigmaN;	//	Impact of already existing fractures 
@@ -49,8 +45,8 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Break &brk) {
-		os << brk.getCx() << "\t" << brk.getCy() 
-				<< "\t" << brk.getDs() << "\t" << brk.getDn() 
+		os << brk.Cx << "\t" << brk.Cy
+				<< "\t" << brk.Ds << "\t" << brk.Dn 
 				<< "\t" << brk.getBs() << "\t" << brk.getBn()  
 				<< std::endl;
 		return os;

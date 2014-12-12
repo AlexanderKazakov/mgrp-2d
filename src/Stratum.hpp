@@ -2,7 +2,6 @@
 #define	STRATUM_HPP
 
 #include <vector>
-#include <algorithm>
 #include "Fracture.hpp"
 #include "Field.hpp"
 #include <mgl2/mgl.h>
@@ -14,7 +13,8 @@ public:
 	Stratum();
 	~Stratum();
 	void addFracture(int number, double x, double y, double beta, double h_length,
-		int numOfBreaks, double a, double b, double c, std::string pressureType);
+		int numOfBreaks, double a, double b, double c, std::string pressureType,
+		std::string tip, std::string rotation);
 	void setRheology(double _G, double _nu);
 	void getRheology(double &_G, double &_nu);
 	void setStresses(double _Sxx, double _Sxy, double _Syy);
