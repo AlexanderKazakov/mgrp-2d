@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <iostream>
+#include "util.hpp"
+
 
 /**
  * Class for some auxiliary actions with linear elastic field in some point

@@ -39,6 +39,7 @@ Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
 }
 
 void Fracture::calculate() {
+	info("Starting calculation of fracture number", number, "...");
 	breaks[middle].setExternalImpact(stratum->calculateImpactInPoint
 								(breaks[middle].Cx, breaks[middle].Cy));
 
@@ -47,7 +48,7 @@ void Fracture::calculate() {
 	calculateBreaks();
 	if (fractionIsStopped) {
 		numOfBrks = numOfCalcBrks;
-		std::cout << "Fracture number " << number << " is stopped!\n";
+		info("Fracture number", number, "is stopped.");
 	}
 	while ( (numOfCalcBrks < numOfBrks) ) {	
 		double deltaBeta1 = calcAngleOfRotation(breaks[front]);
@@ -67,9 +68,10 @@ void Fracture::calculate() {
 		calculateBreaks();
 		if (fractionIsStopped) {
 			numOfBrks = numOfCalcBrks;
-			std::cout << "Fracture number " << number << " is stopped!\n";
+			info("Fracture number", number, "is stopped.");
 		}
 	}
+	info("Fracture number", number, "is calculated.");
 }
 
 void Fracture::calculateBreaks() {

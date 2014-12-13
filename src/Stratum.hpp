@@ -2,9 +2,10 @@
 #define	STRATUM_HPP
 
 #include <vector>
+#include <mgl2/mgl.h>
 #include "Fracture.hpp"
 #include "Field.hpp"
-#include <mgl2/mgl.h>
+#include "util.hpp"
 
 class Fracture;
 

@@ -1,6 +1,7 @@
 #include "Stratum.hpp"
 
 Stratum::Stratum() {
+	info("Stratum is created.");
 }
 
 Stratum::~Stratum() {
@@ -9,6 +10,7 @@ Stratum::~Stratum() {
 void Stratum::addFracture(int number, double x, double y, double beta, double h_length,
 		int numOfBreaks, double a, double b, double c, std::string pressureType,
 		std::string tip, std::string rotation) {
+	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
 	fractures.push_back(Fracture(this, number, h_length,
 					numOfBreaks, a, b, c, pressureType, tip, rotation));
 	fractures.back().allocateBreaks(x, y, beta);
@@ -40,11 +42,13 @@ void Stratum::reserve(int numberOfFractures) {
 }
 
 void Stratum::calculate() {
+	info("Starting calculation ...");
 	currentFracture = fractures.begin();
 	while (currentFracture != fractures.end()) {	
 		currentFracture->calculate();
 		currentFracture++;	
 	}
+	info("Calculation is done.");
 }
 
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
@@ -61,6 +65,7 @@ Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 }
 
 void Stratum::visualize() {
+	info("Starting visualisation ...");
 	mglGraph gr = mglGraph(0, 1200, 800);
 	gr.SetRanges(Xmin, Xmax, Ymin, Ymax);
 	gr.Axis();
@@ -70,9 +75,11 @@ void Stratum::visualize() {
 //	drawStressDirections(gr);
 	
 	gr.WriteFrame("fractures.png");
+	info("Visualisation is done.");
 }
 
 void Stratum::drawFractures(mglGraph& gr) {
+	info("Drawing fractures ...");
 	std::vector<Fracture>::iterator fracture = fractures.begin();
 	while (fracture != fractures.end()) {
 		int N = fracture->getNumOfBreaks() + 1;
@@ -91,6 +98,7 @@ void Stratum::drawFractures(mglGraph& gr) {
 }
 
 void Stratum::drawField(mglGraph &gr) {
+	info("Drawing field ...");
 	int N = 104;
 	mglData x(N);
 	mglData y(N);
@@ -118,6 +126,7 @@ void Stratum::drawField(mglGraph &gr) {
 }
 
 void Stratum::drawStressDirections(mglGraph &gr) {
+	info("Drawing main stress directions ...");
 	int N = 23;
 	mglData x(N);
 	mglData y(N);

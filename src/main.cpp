@@ -5,8 +5,9 @@
 #include <tinyxml.h>
 #include <unistd.h>
 
-#include"Stratum.hpp"
-#include"Fracture.hpp"
+#include "util.hpp"
+#include "Stratum.hpp"
+#include "Fracture.hpp"
 
 /**
  * A project for calculation of fractures' propagation 
@@ -31,22 +32,23 @@ int main(int argc, char** argv) {
 			case 't': taskfile = optarg;
 				break;
 			case '?': {
-				std::cout << "Usage:	./mgrp-2d -t name_of_taskfile\n";
+				info("Usage:\t./mgrp-2d -t name_of_taskfile");
 				exit(-1);
 			}
 		}
 	}
 	
+	info("MGRP-2D is running ...");
 	Stratum stratum;
 	loadTask(stratum, taskfile);
 	stratum.calculate();
 	stratum.visualize();
-	
+	info("MGRP-2D finished the work.");
 	return 0;
 }
 
 void loadTask(Stratum &stratum, const char* taskfile) {
-
+	info("Loading task from", taskfile, "...");
 	TiXmlDocument *xml_file = new TiXmlDocument(taskfile);
 	if(!xml_file->LoadFile()) {
 		std::cout << "Usage:	./mgrp-2d -t name_of_taskfile\n" << 
@@ -113,4 +115,5 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 
 	}
+	info("Task from", taskfile, "is loaded");
 }

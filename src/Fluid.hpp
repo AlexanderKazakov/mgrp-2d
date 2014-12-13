@@ -3,6 +3,8 @@
 
 #include <string>
 #include "Break.hpp"
+#include "util.hpp"
+
 
 /**
  * Class for simulation of the fluid in the fracture (at this moment just by 

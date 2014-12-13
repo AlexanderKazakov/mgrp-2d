@@ -8,6 +8,8 @@
 #include "Field.hpp"
 #include "Fluid.hpp"
 #include "Stratum.hpp"
+#include "util.hpp"
+
 
 class Stratum;
 

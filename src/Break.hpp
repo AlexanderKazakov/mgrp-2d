@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include "Field.hpp"
+#include "util.hpp"
 
 /**
  * Class that represent the boundary element in Crouch's 
