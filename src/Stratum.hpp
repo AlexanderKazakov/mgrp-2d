@@ -93,9 +93,13 @@ public:
      */
 	Field calculateImpactInPoint(const double &x, const double &y);
 	/**
-	 * Create enterprise graphics for everyone's happiness =)
+	 * Create enterprise graphics
      */
-	void visualize();
+	void visualize(); 
+	/**
+	 * Draw displacement discontinuities for one fracture
+     */
+	void drawDisplacements();
 private:
 	double G;	//	Shear modulus
 	double nu;	//	Poisson's ratio

@@ -77,6 +77,16 @@ public:
      * @param y
      */
 	void getPointsForPlot(double *x, double *y) const;
+	/**
+	 * Get displacements v(x) for drawing on the graph 
+     * @param x
+     * @param v
+     */
+	void getPointsForDisplacementPlot(double* x, double* v) const;
+	/**
+     * @return length of the fracture
+     */
+	double getLength() const;
 	// It's necessary for fast and easy setting the pressure of the inner 
 	// fluid on every step of calculation.
 	friend class Fluid;
@@ -91,6 +101,7 @@ private:
 	int numOfCalcBrks;	//	number of already calculated elements
 	double G, nu;	//	rheology parameters
 	double half_lengthOfBreaks;	//	half-length of boundary elements
+	double length;	//	length of the fracture
 	std::string tip; //	rule to use special boundary element at the tip
 	std::string rotation;
 		//	rule to use splitting on actual configuration's calculation 

@@ -29,6 +29,7 @@ void Fracture::allocateBreaks(double x, double y, double beta) {
 	// Dynamical memory allocation (!)
 	breaks = new Break[numOfBrks];
 	breaks[middle] = Break(half_lengthOfBreaks, x, y, beta, G, nu);
+	length = 2 * half_lengthOfBreaks;
 }
 
 Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
@@ -62,7 +63,7 @@ void Fracture::calculate() {
 			deltaBeta1 = (calcAngleOfRotation(breaks[front]) + deltaBeta1) / 2;
 			deltaBeta2 = (calcAngleOfRotation(breaks[back]) + deltaBeta2) / 2;
 		
-			back--; front++; numOfCalcBrks -= 2;
+			back--; front++; numOfCalcBrks -= 2; length -= 4 * half_lengthOfBreaks;
 			addNewBreaks(deltaBeta1, deltaBeta2);
 		}
 		calculateBreaks();
@@ -117,6 +118,11 @@ void Fracture::calculateBreaks() {
 	gsl_vector_free(x);
 	gsl_vector_free(b);
 	
+	print(breaks[front].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t",
+		breaks[front].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
+		breaks[back].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
+		breaks[back].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2));
+	
 	if (breaks[front].Dn > 0 || breaks[back].Dn > 0)
 		fractionIsStopped = true;
 }
@@ -151,11 +157,12 @@ void Fracture::addNewBreaks(const double &deltaBeta1, const double &deltaBeta2) 
 			(breaks[back].Cx, breaks[back].Cy));
 	
 	numOfCalcBrks += 2;
+	length += 4 * half_lengthOfBreaks;
 	fluid.calculatePressure(&breaks[middle], numOfCalcBrks);
 }
 
 int Fracture::getNumOfBreaks() const {
-	return numOfBrks;
+	return numOfCalcBrks;
 }
 
 void Fracture::getPointsForPlot(double* x, double* y) const {
@@ -168,4 +175,15 @@ void Fracture::getPointsForPlot(double* x, double* y) const {
 		y[i+1] = breaks[front + i].Cy + 
 				half_lengthOfBreaks * sin(breaks[front + i].beta);
 	}
+}
+
+void Fracture::getPointsForDisplacementPlot(double* x, double* v) const {
+	for (int i = 0; i < numOfCalcBrks; i++) {
+		x[i] = breaks[front + i].Cx;
+		v[i] = breaks[front + i].Dn / 2;
+	}
+}
+
+double Fracture::getLength() const {
+	return length;
 }

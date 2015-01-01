@@ -40,10 +40,16 @@ int main(int argc, char** argv) {
 	
 	info("MGRP-2D is running ...");
 	Stratum stratum;
-	loadTask(stratum, taskfile);
+	try {
+		loadTask(stratum, taskfile);
+	} catch (const char *str) {
+		print("Loading task is failed:\n", str);
+		exit(-1);
+	}
 	stratum.calculate();
 	stratum.visualize();
-	info("MGRP-2D finished the work.");
+	stratum.drawDisplacements();
+	info("MGRP-2D finished the work.\n");
 	return 0;
 }
 
@@ -51,9 +57,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	info("Loading task from", taskfile, "...");
 	TiXmlDocument *xml_file = new TiXmlDocument(taskfile);
 	if(!xml_file->LoadFile()) {
-		std::cout << "Usage:	./mgrp-2d -t name_of_taskfile\n" << 
-									"Specified taskfile is invalid\n";
-		exit(-1);
+		throw("Specified taskfile is invalid");
 	}
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
 	

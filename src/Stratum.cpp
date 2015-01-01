@@ -80,7 +80,7 @@ void Stratum::visualize() {
 
 void Stratum::drawFractures(mglGraph& gr) {
 	info("Drawing fractures ...");
-	std::vector<Fracture>::iterator fracture = fractures.begin();
+	std::vector<Fracture>::const_iterator fracture = fractures.begin();
 	while (fracture != fractures.end()) {
 		int N = fracture->getNumOfBreaks() + 1;
 		double *_x = new double[N];
@@ -152,4 +152,35 @@ void Stratum::drawStressDirections(mglGraph &gr) {
 			ay.a[i + N * j] = - ay.a[i + N * j];
 		}
 	gr.Vect(x, y, ax, ay, "0");
+}
+
+void Stratum::drawDisplacements() {
+	info("Drawing displacements ...");
+	std::vector<Fracture>::const_iterator fracture = fractures.begin();
+	int N = fracture->getNumOfBreaks();
+	double *_x = new double[N];
+	double *_v = new double[N];
+	fracture->getPointsForDisplacementPlot(_x, _v);
+	mglData v;
+	mglData Cx;
+	Cx.Set(_x, N);
+	v.Set(_v, N);
+	
+	mglGraph gr = mglGraph(0, 1200, 800);
+	gr.SetRanges(1.1*_x[0], 1.1*_x[N-1], 1.1*_v[N/2 + 1], - 1.1*_v[N/2 + 1]);
+	gr.Axis();
+
+	gr.Plot(Cx, v, ".k");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = -v.a[i];
+	}
+	gr.Plot(Cx, v, ".k");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = Syy / G * (1 - nu) * 
+			sqrt(fracture->getLength()*fracture->getLength() - Cx.a[i]*Cx.a[i]);
+	}
+	gr.Plot(Cx, v, "r");
+	gr.WriteFrame("displacements.png");
+	delete [] _x;
+	delete [] _v;
 }
