@@ -27,12 +27,12 @@ void loadTask(Stratum &stratum, const char* taskfile);
 int main(int argc, char** argv) {
 	int opt = 0;
 	char *taskfile;
-	bool drawDisplacement = false;
+	bool displacementsTesting = false;
 	while ((opt = getopt(argc, argv, "t:d:")) != -1) {
 		switch (opt) {
 			case 't': taskfile = optarg;
 				break;
-			case 'd': drawDisplacement = true;
+			case 'd': displacementsTesting = true;
 				break;
 			case '?': {
 				info("Usage:\t./mgrp-2d -t name_of_taskfile");
@@ -50,9 +50,8 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 	stratum.calculate();
-	stratum.visualize();
-	if ( drawDisplacement )
-		stratum.drawDisplacements();
+	//stratum.visualize();
+	if (displacementsTesting) stratum.drawDisplacements();
 	info("MGRP-2D finished the work.\n");
 	return 0;
 }

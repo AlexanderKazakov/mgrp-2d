@@ -14,7 +14,8 @@ void Stratum::addFracture(int number, double x, double y, double beta, double h_
 	fractures.push_back(Fracture(this, number, h_length,
 					numOfBreaks, a, b, c, pressureType, tip, rotation));
 	fractures.back().allocateBreaks(x, y, beta);
-	fluidOfFirstFracture.setType(a, b, c, pressureType);
+	pressureA = a;	pressureB = b;	pressureC = c;
+	pressure_type = pressureType;
 }
 
 void Stratum::setRheology(double _G, double _nu) {
@@ -157,8 +158,8 @@ void Stratum::drawStressDirections(mglGraph &gr) {
 
 void Stratum::drawDisplacements() {
 	info("Drawing displacements ...");
-	auto fracture = fractures.begin();
-	int N = fracture->getNumOfBreaks();
+	std::vector<Fracture>::const_iterator fracture = fractures.begin();
+	int N = fracture->getNumOfBreaks() + 2;
 	double *_x = new double[N];
 	double *_v = new double[N];
 	fracture->getPointsForDisplacementPlot(_x, _v);
@@ -168,7 +169,7 @@ void Stratum::drawDisplacements() {
 	v.Set(_v, N);
 	
 	mglGraph gr = mglGraph(0, 1200, 800);
-	gr.SetRanges(1.1*_x[0], 1.1*_x[N-1], 1.1*_v[N/2 + 1], - 1.1*_v[N/2 + 1]);
+	gr.SetRanges(1.2*_x[0], 1.2*_x[N-1], 1.2*_v[N/2 + 1], - 1.2*_v[N/2 + 1]);
 	gr.Axis();
 
 	gr.Plot(Cx, v, ".k");
@@ -177,33 +178,36 @@ void Stratum::drawDisplacements() {
 	}
 	gr.Plot(Cx, v, ".k");
 	
-	std::string pressureType;
-	double _a, b, c;
-	fluidOfFirstFracture.getType(_a, b, c, pressureType);
-	if ( pressureType == "const" ) {
+	
+	double numerical = v.a[1];
+	if (pressure_type == "const" && pressureC == 0) {
 		for (int i = 0; i < N; i++) {
-			double l = fracture->getLength() / 2;
-			double x = Cx.a[i];
-			v.a[i] = (Syy - c) / G * (1 - nu) * sqrt(l*l - x*x);
-		}
-	} else if ( pressureType == "lag" ) {
-		for (int i = 0; i < N; i++) {
-			double l = fracture->getLength() / 2;
-			double x = Cx.a[i];
-			double p = - c;
-			double sigma = Syy - c;
-			double a = (1 - _a) * l;
-			v.a[i] = sigma / G * (1 - nu) * sqrt(l*l - x*x)
-					- 2 * p * (1 - nu) / G / M_PI *
-					( acos((l - a) / l) * sqrt(l*l - x*x) + 
-					x / 2 * log(fabs( (x * sqrt(2*a*l - a*a) + (l - a) *	sqrt(l*l - x*x)) /
-					(x * sqrt(2*a*l - a*a) - (l - a) *	sqrt(l*l - x*x)) )) - 
-					(l - a) / 2 * log(fabs( (sqrt(2*a*l - a*a) + sqrt(l*l - x*x)) / 
-					(sqrt(2*a*l - a*a) - sqrt(l*l - x*x)) )) );
+			v.a[i] = Syy / G * (1 - nu) * 
+				sqrt(fracture->getLength()*fracture->getLength() / 4 - Cx.a[i]*Cx.a[i]);
 		}
 	}
+	if (pressure_type == "lag") {
+		for (int i = 0; i < N; i++) {
+			double l = fracture->getLength() / 2;
+			double x = Cx.a[i];
+			double a = l * (1 - pressureA);
+			double sigma = Syy - pressureC;
+			double p = - pressureC;
+			v.a[i] = sigma / G * (1 - nu) * sqrt(l*l - x*x) - 
+			2 * p / G * (1 - nu) / M_PI * ( acos ((l - a) / l) * sqrt(l*l - x*x) + 
+			x / 2 * log(fabs( (x * sqrt(2*a*l - a*a) + (l - a) * sqrt(l*l - x*x))
+			/ (x * sqrt(2*a*l - a*a) - (l - a) * sqrt(l*l - x*x)) )) - 
+			(l - a) / 2 * log(fabs( (sqrt(2*a*l - a*a) + sqrt(l*l - x*x)) /
+			(sqrt(2*a*l - a*a) - sqrt(l*l - x*x)) )) );
+		}
+	}
+	print("analytical / numerical = ", v.a[1] / numerical);
+	gr.Plot(Cx, v, ".r");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = -v.a[i];
+	}
+	gr.Plot(Cx, v, ".r");
 	
-	gr.Plot(Cx, v, "r");
 	gr.WriteFrame("displacements.png");
 	delete [] _x;
 	delete [] _v;

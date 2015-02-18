@@ -5,7 +5,6 @@
 #include <mgl2/mgl.h>
 #include "Fracture.hpp"
 #include "Field.hpp"
-#include "Fluid.hpp"
 #include "util.hpp"
 
 class Fracture;
@@ -26,9 +25,8 @@ public:
 	 * Add to the subsequent computation another fracture.
 	 * Pressure of the inner fluid of the fracture is equal to
 	 * - (at^2 + bt + c), t from -1 to 1, if pressureType is "polynomial",
-	 * ( -c ), if pressureType is "const"
-	 * ( -c ), t from -a to a, 0 elsewhere, 
-	 * if pressureType is "lag" (means in tips of the fracture pressure = 0) 
+	 * ( - c ), if pressureType is "const", 
+	 * ( - c if abs(t) < a, 0 otherwise), if pressureType is "lag" 
      * @param number index number of fracture
      * @param x	initial position of fracture
      * @param y initial position of fracture
@@ -100,7 +98,8 @@ public:
      */
 	void visualize(); 
 	/**
-	 * Draw displacement discontinuities for one fracture
+	 * Draw displacement discontinuities for one fracture calculated 
+	 * by the program and by analytical solution to match them
      */
 	void drawDisplacements();
 private:
@@ -111,10 +110,13 @@ private:
 	double Sxx;	//	
 	double Sxy;	//	External stresses
 	double Syy;	//
+	double pressureA, pressureB, pressureC;	// pressure parameters 
+											//	of the first fracture (for verification)
+	std::string pressureType;	//	type of pressure distribution 
+								//	along the first fracture (for verification)
 	std::vector<Fracture> fractures;
 	std::vector<Fracture>::iterator currentFracture;
-						// the iterator on the fracture that is calculated currently
-	Fluid fluidOfFirstFracture;	//	for visualization purpose, in test2.py
+						// the iterator on the fracture that is calculated now
 	/**
 	 * Draw the actual field
      * @param gr graph to draw on

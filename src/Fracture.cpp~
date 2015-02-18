@@ -118,10 +118,10 @@ void Fracture::calculateBreaks() {
 	gsl_vector_free(x);
 	gsl_vector_free(b);
 	
-//	print(breaks[front].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t",
-//		breaks[front].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
-//		breaks[back].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
-//		breaks[back].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2));
+	print(breaks[front].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t",
+		breaks[front].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
+		breaks[back].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
+		breaks[back].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2));
 	
 	if (breaks[front].Dn > 0 || breaks[back].Dn > 0)
 		fractionIsStopped = true;
@@ -178,9 +178,13 @@ void Fracture::getPointsForPlot(double* x, double* y) const {
 }
 
 void Fracture::getPointsForDisplacementPlot(double* x, double* v) const {
+	x[0] = breaks[front].Cx - half_lengthOfBreaks * cos(breaks[front].beta);
+	v[0] = 0;
+	x[numOfCalcBrks+1] = breaks[back].Cx + half_lengthOfBreaks * cos(breaks[front].beta);
+	v[numOfCalcBrks+1] = 0;
 	for (int i = 0; i < numOfCalcBrks; i++) {
-		x[i] = breaks[front + i].Cx;
-		v[i] = breaks[front + i].Dn / 2;
+		x[i+1] = breaks[front + i].Cx;
+		v[i+1] = breaks[front + i].Dn / 2;
 	}
 }
 
