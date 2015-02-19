@@ -182,13 +182,13 @@ void Stratum::drawDisplacements() {
 	fluidOfFirstFracture.getType(_a, b, c, pressureType);
 	if ( pressureType == "const" ) {
 		for (int i = 0; i < N; i++) {
-			double l = fracture->getLength() / 2;
+			double l = fracture->getHalfLength();
 			double x = Cx.a[i];
 			v.a[i] = (Syy - c) / G * (1 - nu) * sqrt(l*l - x*x);
 		}
 	} else if ( pressureType == "lag" ) {
 		for (int i = 0; i < N; i++) {
-			double l = fracture->getLength() / 2;
+			double l = fracture->getHalfLength();
 			double x = Cx.a[i];
 			double p = - c;
 			double sigma = Syy - c;
@@ -202,7 +202,10 @@ void Stratum::drawDisplacements() {
 					(sqrt(2*a*l - a*a) - sqrt(l*l - x*x)) )) );
 		}
 	}
-	
+	gr.Plot(Cx, v, "r");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = -v.a[i];
+	}
 	gr.Plot(Cx, v, "r");
 	gr.WriteFrame("displacements.png");
 	delete [] _x;

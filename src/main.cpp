@@ -106,7 +106,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
 		
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
-		int numOfElems = atoi(elements->Attribute("number_of_elements"));
+		int numOfElems = atoi(elements->Attribute("number_of_elements")) + 4;
 		// Number of elements in fracture is always odd because 
 		// it doesn't matter but is very helpful
 		if (numOfElems % 2 == 0) numOfElems += 1;

@@ -84,9 +84,9 @@ public:
      */
 	void getPointsForDisplacementPlot(double* x, double* v) const;
 	/**
-     * @return length of the fracture
+     * @return half-length of the fracture
      */
-	double getLength() const;
+	double getHalfLength() const;
 	// It's necessary for fast and easy setting the pressure of the inner 
 	// fluid on every step of calculation.
 	friend class Fluid;
@@ -101,7 +101,7 @@ private:
 	int numOfCalcBrks;	//	number of already calculated elements
 	double G, nu;	//	rheology parameters
 	double half_lengthOfBreaks;	//	half-length of boundary elements
-	double length;	//	length of the fracture
+	double halfLength;	//	half-length of the fracture
 	std::string tip; //	rule to use special boundary element at the tip
 	std::string rotation;
 		//	rule to use splitting on actual configuration's calculation 
@@ -119,11 +119,28 @@ private:
      */
 	void calculateBreaks();
 	/**
-	 * Add two tip elements to the edges of fracture
-     * @param deltaBeta1 rotation of the first element towards its neighbour
-     * @param deltaBeta2 rotation of the last element towards its neighbour
+	 * Add new elements to the fracture. Three small tip elements in both edges 
+	 * are replaced by one ordinary element with equal length and angle. Next, 
+	 * new three small elements are added to the edges with new angle from parameters.
+     * @param deltaBeta1 rotation of the left tip element towards its neighbour
+     * @param deltaBeta2 rotation of the right tip element towards its neighbour
      */
 	void addNewBreaks(const double &deltaBeta1, const double &deltaBeta2);
+	/**
+	 * Add two elements to the edges of fracture.
+     * @param deltaBeta1 rotation of the first (left) element towards its neighbour
+     * @param deltaBeta2 rotation of the last (right) element towards its neighbour
+	 * @param half_length half-length of the elements to add
+     */
+	void addNewBreaks(const double &deltaBeta1, const double &deltaBeta2,
+	                                            const double &half_length);
+	/**
+	 * Replace three small tip elements on both edges with new three small tip 
+	 * elements with other angle from parameters
+     * @param deltaBeta1 rotation of the left tip element towards its neighbour
+     * @param deltaBeta2 rotation of the right tip element towards its neighbour
+     */
+	void replaceTipElements(const double &deltaBeta1, const double &deltaBeta2);
 	/**
 	 * Calculate the angle of rotation of the fracture propagation
 	 * near the given break 

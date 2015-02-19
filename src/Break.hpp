@@ -78,6 +78,7 @@ public:
      * @return Mode II stress intensity factor near the element
      */
 	double K2() const;
+	double getA() const;
 	
 private:
 	double G, nu;	//	Rheology parameters
@@ -100,9 +101,9 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Break &brk) {
-		os << brk.Cx << "\t" << brk.Cy
-				<< "\t" << brk.Ds << "\t" << brk.Dn 
-				<< "\t" << brk.getBs() << "\t" << brk.getBn()  
+		os << brk.Cx - brk.getA() << "\t" << brk.Cx << "\t" << brk.Cx + brk.getA() //<< "\t" << brk.Cy
+				//<< "\t" << brk.Ds << "\t" << brk.Dn 
+				//<< "\t" << brk.getBs() << "\t" << brk.getBn()  
 				<< std::endl;
 		return os;
 	};

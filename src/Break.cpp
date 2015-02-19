@@ -83,6 +83,10 @@ double Break::getBn() const {
 	return sigmaN - externalSigmaN;
 }
 
+double Break::getA() const {
+	return a;
+}
+
 void Break::setSigmaN(const double& _sigmaN) {
 	sigmaN = _sigmaN;
 }

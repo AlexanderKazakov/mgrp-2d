@@ -29,7 +29,7 @@ void Fracture::allocateBreaks(double x, double y, double beta) {
 	// Dynamical memory allocation (!)
 	breaks = new Break[numOfBrks];
 	breaks[middle] = Break(half_lengthOfBreaks, x, y, beta, G, nu);
-	length = 2 * half_lengthOfBreaks;
+	halfLength = half_lengthOfBreaks;
 }
 
 Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
@@ -43,7 +43,7 @@ void Fracture::calculate() {
 	info("Starting calculation of fracture number", number, "...");
 	breaks[middle].setExternalImpact(stratum->calculateImpactInPoint
 								(breaks[middle].Cx, breaks[middle].Cy));
-
+	
 	fluid.calculatePressure(&(breaks[middle]), numOfCalcBrks);
 	
 	calculateBreaks();
@@ -56,15 +56,17 @@ void Fracture::calculate() {
 		double deltaBeta2 = calcAngleOfRotation(breaks[back]);
 		
 		addNewBreaks(deltaBeta1, deltaBeta2);
+//		for (int i = front; i <= back; i++) {
+//			print(breaks[i]);
+//		}
+//		print("---------------------------");
 		if (rotation == "predictor-corrector") {
 			//	Clarifying the direction of fracture's growth like it is
 			//	usually done in "predictor-corrector" methods
 			calculateBreaks();
 			deltaBeta1 = (calcAngleOfRotation(breaks[front]) + deltaBeta1) / 2;
-			deltaBeta2 = (calcAngleOfRotation(breaks[back]) + deltaBeta2) / 2;
-		
-			back--; front++; numOfCalcBrks -= 2; length -= 4 * half_lengthOfBreaks;
-			addNewBreaks(deltaBeta1, deltaBeta2);
+			deltaBeta2 = (calcAngleOfRotation(breaks[back]) + deltaBeta2) / 2;		
+			replaceTipElements(deltaBeta1, deltaBeta2);
 		}
 		calculateBreaks();
 		if (fractionIsStopped) {
@@ -72,6 +74,7 @@ void Fracture::calculate() {
 			info("Fracture number", number, "is stopped.");
 		}
 	}
+	numOfBrks = numOfCalcBrks;
 	info("Fracture number", number, "is calculated.");
 }
 
@@ -118,10 +121,10 @@ void Fracture::calculateBreaks() {
 	gsl_vector_free(x);
 	gsl_vector_free(b);
 	
-//	print(breaks[front].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t",
-//		breaks[front].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
-//		breaks[back].K1() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2), "\t", 
-//		breaks[back].K2() / sqrt(M_PI * length / 2) / sqrt(M_PI / 2));
+//	print(breaks[front].K1() / sqrt(M_PI * halfLength) / sqrt(M_PI / 2), "\t",
+//		breaks[front].K2() / sqrt(M_PI * halfLength) / sqrt(M_PI / 2), "\t", 
+//		breaks[back].K1() / sqrt(M_PI * halfLength) / sqrt(M_PI / 2), "\t", 
+//		breaks[back].K2() / sqrt(M_PI * halfLength) / sqrt(M_PI / 2));
 	
 	if (breaks[front].Dn > 0 || breaks[back].Dn > 0)
 		fractionIsStopped = true;
@@ -136,28 +139,64 @@ double Fracture::calcAngleOfRotation(const Break &break1) const {
 }
 
 void Fracture::addNewBreaks(const double &deltaBeta1, const double &deltaBeta2) {
+	
+	if (numOfCalcBrks == 1) {
+		addNewBreaks(deltaBeta1, deltaBeta2, 5 * half_lengthOfBreaks / 9);
+		addNewBreaks(0, 0, half_lengthOfBreaks / 3);
+		addNewBreaks(0, 0, half_lengthOfBreaks / 9);
+	} else {
+		double beta1 = breaks[front].beta;
+		double beta2 = breaks[back].beta;
+		front += 3;
+		back -= 3;
+		numOfCalcBrks -= 6;
+		halfLength -= 2 * half_lengthOfBreaks;
+		double oldDeltaBeta1 = beta1 - breaks[front].beta;
+		double oldDeltaBeta2 = beta2 - breaks[back].beta;
+		
+		addNewBreaks(oldDeltaBeta1, oldDeltaBeta2, half_lengthOfBreaks);
+		addNewBreaks(deltaBeta1, deltaBeta2, 5 * half_lengthOfBreaks / 9);
+		addNewBreaks(0, 0, half_lengthOfBreaks / 3);
+		addNewBreaks(0, 0, half_lengthOfBreaks / 9);
+	}
+	
+	fluid.calculatePressure(&breaks[middle], numOfCalcBrks);
+}
+
+void Fracture::addNewBreaks(const double& deltaBeta1, const double& deltaBeta2, 
+                                                      const double& half_length) {
 	double beta1 = breaks[front].beta + deltaBeta1;
-	double x1 = breaks[front].Cx - half_lengthOfBreaks *
-			(cos(beta1) + cos(breaks[front].beta));
-	double y1 = breaks[front].Cy - half_lengthOfBreaks *
-			(sin(beta1) + sin(breaks[front].beta));
+	double x1 = breaks[front].Cx - breaks[front].getA() * cos(breaks[front].beta) - 
+	            half_length * cos(beta1);
+	double y1 = breaks[front].Cy - breaks[front].getA() * sin(breaks[front].beta) - 
+	            half_length * sin(beta1);
 	front--;
-	breaks[front] = Break(half_lengthOfBreaks, x1, y1, beta1, G, nu);
+	breaks[front] = Break(half_length, x1, y1, beta1, G, nu);
 	breaks[front].setExternalImpact(stratum->calculateImpactInPoint
-			(breaks[front].Cx, breaks[front].Cy));
+	                                         (breaks[front].Cx, breaks[front].Cy));
 
 	beta1 = breaks[back].beta + deltaBeta2;
-	x1 = breaks[back].Cx + half_lengthOfBreaks *
-			(cos(beta1) + cos(breaks[back].beta));
-	y1 = breaks[back].Cy + half_lengthOfBreaks *
-			(sin(beta1) + sin(breaks[back].beta));
+	x1 = breaks[back].Cx + breaks[back].getA() * cos(breaks[back].beta) + 
+	     half_length * cos(beta1);
+	y1 = breaks[back].Cy + breaks[back].getA() * sin(breaks[back].beta) + 
+	     half_length * sin(beta1);
 	back++;
-	breaks[back] = Break(half_lengthOfBreaks, x1, y1, beta1, G, nu);
+	breaks[back] = Break(half_length, x1, y1, beta1, G, nu);
 	breaks[back].setExternalImpact(stratum->calculateImpactInPoint
-			(breaks[back].Cx, breaks[back].Cy));
+	                                        (breaks[back].Cx, breaks[back].Cy));
 	
 	numOfCalcBrks += 2;
-	length += 4 * half_lengthOfBreaks;
+	halfLength += 2 * half_length;
+}
+
+void Fracture::replaceTipElements(const double& deltaBeta1, const double& deltaBeta2) {
+	back -= 3;
+	front += 3;
+	numOfCalcBrks -= 6; 
+	halfLength -= 2 * half_lengthOfBreaks;
+	addNewBreaks(deltaBeta1, deltaBeta2, 5 * half_lengthOfBreaks / 9);
+	addNewBreaks(0, 0, half_lengthOfBreaks / 3);
+	addNewBreaks(0, 0, half_lengthOfBreaks / 9);
 	fluid.calculatePressure(&breaks[middle], numOfCalcBrks);
 }
 
@@ -166,14 +205,14 @@ int Fracture::getNumOfBreaks() const {
 }
 
 void Fracture::getPointsForPlot(double* x, double* y) const {
-	x[0] = breaks[front].Cx - half_lengthOfBreaks * cos(breaks[front].beta);
-	y[0] = breaks[front].Cy - half_lengthOfBreaks * sin(breaks[front].beta);
+	x[0] = breaks[front].Cx - breaks[front].getA() * cos(breaks[front].beta);
+	y[0] = breaks[front].Cy - breaks[front].getA() * sin(breaks[front].beta);
 	
 	for (int i = 0; i < numOfCalcBrks; i++) {
 		x[i+1] = breaks[front + i].Cx + 
-				half_lengthOfBreaks * cos(breaks[front + i].beta);
+		         breaks[front + i].getA() * cos(breaks[front + i].beta);
 		y[i+1] = breaks[front + i].Cy + 
-				half_lengthOfBreaks * sin(breaks[front + i].beta);
+		         breaks[front + i].getA() * sin(breaks[front + i].beta);
 	}
 }
 
@@ -184,6 +223,6 @@ void Fracture::getPointsForDisplacementPlot(double* x, double* v) const {
 	}
 }
 
-double Fracture::getLength() const {
-	return length;
+double Fracture::getHalfLength() const {
+	return halfLength;
 }
