@@ -56,10 +56,6 @@ void Fracture::calculate() {
 		double deltaBeta2 = calcAngleOfRotation(breaks[back]);
 		
 		addNewBreaks(deltaBeta1, deltaBeta2);
-//		for (int i = front; i <= back; i++) {
-//			print(breaks[i]);
-//		}
-//		print("---------------------------");
 		if (rotation == "predictor-corrector") {
 			//	Clarifying the direction of fracture's growth like it is
 			//	usually done in "predictor-corrector" methods
