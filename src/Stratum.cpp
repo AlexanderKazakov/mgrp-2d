@@ -7,38 +7,43 @@ Stratum::Stratum() {
 Stratum::~Stratum() {
 }
 
-void Stratum::addFracture(int number, double x, double y, double beta, double h_length,
-		int numOfBreaks, double a, double b, double c, std::string pressureType,
-		std::string tip, std::string rotation) {
+void Stratum::addFracture(int number, int numOfLmnts, 
+                          double x, double y, double beta, 
+                          double halfLengthOfLmnts,
+                          double a, double b, double c,
+                          std::string pressureType, std::string tip, 
+                          std::string rotation) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
-	fractures.push_back(Fracture(this, number, h_length,
-					numOfBreaks, a, b, c, pressureType, tip, rotation));
-	fractures.back().allocateBreaks(x, y, beta);
-	fluidOfFirstFracture.setType(a, b, c, pressureType);
+	fractures.push_back( Fracture(this, number, numOfLmnts, halfLengthOfLmnts, 
+                                  a, b, c, pressureType, tip, rotation));
+	fractures.back().allocateLmnts(x, y, beta);
+	breakerOfFirstFracture.setType(a, b, c, pressureType);
 }
 
-void Stratum::setRheology(double _G, double _nu) {
-	G = _G;		nu = _nu;
+void Stratum::setRheology(const double &_G, const double &_nu) {
+	G = _G; nu = _nu;
 }
 
-void Stratum::getRheology(double &_G, double &_nu) {
-	_G = G;		_nu = nu;
+void Stratum::getRheology(double &_G, double &_nu) const {
+	_G = G; _nu = nu;
 }
 
-void Stratum::setStresses(double _Sxx, double _Sxy, double _Syy) {
+void Stratum::setStresses(const double &_Sxx, const double &_Sxy, 
+                          const double &_Syy) {
 	Sxx = _Sxx;
 	Sxy = _Sxy;
 	Syy = _Syy;
 }
 
-void Stratum::setRanges(double _Xmin, double _Xmax, double _Ymin, double _Ymax) {
+void Stratum::setRanges(const double &_Xmin, const double &_Xmax,
+                        const double &_Ymin, const double &_Ymax) {
 	Xmin = _Xmin;
 	Xmax = _Xmax;
 	Ymin = _Ymin;
 	Ymax = _Ymax;		
 }
 
-void Stratum::reserve(int numberOfFractures) {
+void Stratum::reserve(const int numberOfFractures) {
 	fractures.reserve(numberOfFractures);
 }
 
@@ -52,8 +57,8 @@ void Stratum::calculate() {
 	info("Calculation is done.");
 }
 
-Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
-	std::vector<Fracture>::iterator fracture = fractures.begin();
+Field Stratum::calculateImpactInPoint(const double& x, const double& y) const{
+	auto fracture = fractures.begin();
 	Field field;
 	while (fracture != currentFracture) {
 		field += fracture->calculateImpactInPoint(x, y);
@@ -65,7 +70,7 @@ Field Stratum::calculateImpactInPoint(const double& x, const double& y) {
 	return field;
 }
 
-void Stratum::visualize() {
+void Stratum::visualize() const{
 	info("Starting visualisation ...");
 	mglGraph gr = mglGraph(0, 1200, 800);
 	gr.SetRanges(Xmin, Xmax, Ymin, Ymax);
@@ -79,11 +84,75 @@ void Stratum::visualize() {
 	info("Visualisation is done.");
 }
 
-void Stratum::drawFractures(mglGraph& gr) {
+void Stratum::drawDisplacements() const{
+	info("Drawing displacements ...");
+	auto fracture = fractures.begin();
+	int N = fracture->getNumOfLmnts();
+	double *_x = new double[N];
+	double *_v = new double[N];
+	// numerical results
+	fracture->getPointsForDisplacementPlot(_x, _v);
+	mglData v;
+	mglData Cx;
+	Cx.Set(_x, N);
+	v.Set(_v, N);
+	
+	mglGraph gr = mglGraph(0, 1200, 800);
+	gr.SetRanges(1.1*_x[0], 1.1*_x[N-1], 1.1*_v[N/2 + 1], - 1.1*_v[N/2 + 1]);
+	gr.Axis();
+
+	gr.Plot(Cx, v, ".k");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = -v.a[i];
+	}
+	gr.Plot(Cx, v, ".k");
+	
+	std::string pressureType;
+	double _a, b, c;
+	breakerOfFirstFracture.getType(_a, b, c, pressureType);
+	// analytical solution
+	if ( pressureType == "const" ) {
+		for (int i = 0; i < N; i++) {
+			double l = fracture->getHalfLength();
+			double x = Cx.a[i];
+			v.a[i] = (Syy - c) / G * (1 - nu) * sqrt(l*l - x*x);
+		}
+	} else if ( pressureType == "lag" ) {
+		for (int i = 0; i < N; i++) {
+			double l = fracture->getHalfLength();
+			double x = Cx.a[i];
+			double p = - c;
+			double sigma = Syy - c;
+			double a = (1 - _a) * l;
+			v.a[i] =  sigma / G * (1 - nu) * sqrt(l*l - x*x)
+					
+			        - 2 * p * (1 - nu) / G / M_PI *
+			            ( acos((l - a) / l) * sqrt(l*l - x*x) 
+					
+			            + x / 2 * log(fabs(
+			                (x * sqrt(2*a*l - a*a) + (l - a) * sqrt(l*l - x*x)) /
+			                ( x * sqrt(2*a*l - a*a) - (l - a) *	sqrt(l*l - x*x)) ))
+			        
+			            - (l - a) / 2 * log(fabs(  
+			                (sqrt(2*a*l - a*a) + sqrt(l*l - x*x)) / 
+			                (sqrt(2*a*l - a*a) - sqrt(l*l - x*x)) )) );
+		}
+	}
+	gr.Plot(Cx, v, "r");
+	for (int i = 0; i < N; i++) {
+		v.a[i] = -v.a[i];
+	}
+	gr.Plot(Cx, v, "r");
+	gr.WriteFrame("displacements.png");
+	delete [] _x;
+	delete [] _v;
+}
+
+void Stratum::drawFractures(mglGraph& gr) const{
 	info("Drawing fractures ...");
-	std::vector<Fracture>::const_iterator fracture = fractures.begin();
+	auto fracture = fractures.begin();
 	while (fracture != fractures.end()) {
-		int N = fracture->getNumOfBreaks() + 1;
+		int N = fracture->getNumOfLmnts() + 1;
 		double *_x = new double[N];
 		double *_y = new double[N];
 		fracture->getPointsForPlot(_x, _y);
@@ -98,7 +167,7 @@ void Stratum::drawFractures(mglGraph& gr) {
 	}
 }
 
-void Stratum::drawField(mglGraph &gr) {
+void Stratum::drawField(mglGraph &gr) const{
 	info("Drawing field ...");
 	int N = 104;
 	mglData x(N);
@@ -126,7 +195,7 @@ void Stratum::drawField(mglGraph &gr) {
 	gr.Colorbar();
 }
 
-void Stratum::drawStressDirections(mglGraph &gr) {
+void Stratum::drawStressDirections(mglGraph &gr) const{
 	info("Drawing main stress directions ...");
 	int N = 23;
 	mglData x(N);
@@ -153,61 +222,4 @@ void Stratum::drawStressDirections(mglGraph &gr) {
 			ay.a[i + N * j] = - ay.a[i + N * j];
 		}
 	gr.Vect(x, y, ax, ay, "0");
-}
-
-void Stratum::drawDisplacements() {
-	info("Drawing displacements ...");
-	auto fracture = fractures.begin();
-	int N = fracture->getNumOfBreaks();
-	double *_x = new double[N];
-	double *_v = new double[N];
-	fracture->getPointsForDisplacementPlot(_x, _v);
-	mglData v;
-	mglData Cx;
-	Cx.Set(_x, N);
-	v.Set(_v, N);
-	
-	mglGraph gr = mglGraph(0, 1200, 800);
-	gr.SetRanges(1.1*_x[0], 1.1*_x[N-1], 1.1*_v[N/2 + 1], - 1.1*_v[N/2 + 1]);
-	gr.Axis();
-
-	gr.Plot(Cx, v, ".k");
-	for (int i = 0; i < N; i++) {
-		v.a[i] = -v.a[i];
-	}
-	gr.Plot(Cx, v, ".k");
-	
-	std::string pressureType;
-	double _a, b, c;
-	fluidOfFirstFracture.getType(_a, b, c, pressureType);
-	if ( pressureType == "const" ) {
-		for (int i = 0; i < N; i++) {
-			double l = fracture->getHalfLength();
-			double x = Cx.a[i];
-			v.a[i] = (Syy - c) / G * (1 - nu) * sqrt(l*l - x*x);
-		}
-	} else if ( pressureType == "lag" ) {
-		for (int i = 0; i < N; i++) {
-			double l = fracture->getHalfLength();
-			double x = Cx.a[i];
-			double p = - c;
-			double sigma = Syy - c;
-			double a = (1 - _a) * l;
-			v.a[i] = sigma / G * (1 - nu) * sqrt(l*l - x*x)
-					- 2 * p * (1 - nu) / G / M_PI *
-					( acos((l - a) / l) * sqrt(l*l - x*x) + 
-					x / 2 * log(fabs( (x * sqrt(2*a*l - a*a) + (l - a) *	sqrt(l*l - x*x)) /
-					(x * sqrt(2*a*l - a*a) - (l - a) *	sqrt(l*l - x*x)) )) - 
-					(l - a) / 2 * log(fabs( (sqrt(2*a*l - a*a) + sqrt(l*l - x*x)) / 
-					(sqrt(2*a*l - a*a) - sqrt(l*l - x*x)) )) );
-		}
-	}
-	gr.Plot(Cx, v, "r");
-	for (int i = 0; i < N; i++) {
-		v.a[i] = -v.a[i];
-	}
-	gr.Plot(Cx, v, "r");
-	gr.WriteFrame("displacements.png");
-	delete [] _x;
-	delete [] _v;
 }

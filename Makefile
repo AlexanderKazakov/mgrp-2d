@@ -1,10 +1,10 @@
 CC=g++
 CFLAGS=-std=c++11 -c
 OBJDIR=src/
-SOURCES=$(OBJDIR)main.cpp $(OBJDIR)Stratum.cpp $(OBJDIR)Fluid.cpp\
-$(OBJDIR)Fracture.cpp $(OBJDIR)Break.cpp $(OBJDIR)Field.cpp $(OBJDIR)util.cpp 
+SOURCES=$(OBJDIR)main.cpp $(OBJDIR)Stratum.cpp $(OBJDIR)Breaker.cpp\
+$(OBJDIR)Fracture.cpp $(OBJDIR)Element.cpp $(OBJDIR)Field.cpp $(OBJDIR)util.cpp 
 OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=mgrp-2d	
+EXECUTABLE=mhf-2d	
 
 all: $(EXECUTABLE)
 

@@ -3,12 +3,13 @@
 
 #include <cmath>
 #include <iostream>
+
 #include "util.hpp"
 
 
 /**
- * Class for some auxiliary actions with linear elastic field in some point
- * 
+ * Class for some auxiliary actions with linear elastic field 
+ * in some point (x, y)
  */
 
 
@@ -26,26 +27,26 @@ public:
      * @param beta rotation angle of new axis to old axis
      * @return field in rotated axis
      */
-	Field inRotatedAxis(double beta);
+	Field inRotatedAxis(double beta) const;
 	/**
      * @return angle to x of direction of maximal tensile stresses
      */
-	double directionOfMaxTensileStress();
+	double directionOfMaxTensileStress() const;
 	/**
      * @return Sxx + Syy 
      */
-	double Trace();
+	double Trace() const;
 	/**
      * @return maximal eigenvalue of stress tensor 
      */
-	double Smax();
+	double Smax() const;
 	/**
 	 * Calculate arctan of (a / b) taking into account the infinities
      * @param a	numerator
      * @param b	denominator
      * @return arctan (a / b)
      */
-	double arctan(const double &a, const double &b);
+	double arctan(const double &a, const double &b) const;
 	double Sxx;
 	double Syy;
 	double Sxy;

@@ -23,6 +23,6 @@ for taskFile in taskFiles:
 	os.system('rm -f results/test1/' + taskFile + '.png')
 
 for taskFile in taskFiles:
-	os.system('./mgrp-2d -t ' + 'tasks/tests/' + taskFile + '.xml')
+	os.system('./mhf-2d -t ' + 'tasks/tests/' + taskFile + '.xml')
 	os.system('cp fractures.png results/test1/' + taskFile + '.png')
 

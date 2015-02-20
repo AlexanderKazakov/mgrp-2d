@@ -1,18 +1,20 @@
 #include <cstdlib>
 #include <iostream>
-#include <iostream>
 #include <string>
-#include <tinyxml.h>
 #include <unistd.h>
+
+#include <tinyxml.h>
 
 #include "util.hpp"
 #include "Stratum.hpp"
 #include "Fracture.hpp"
 
 /**
+ *         Multistage Hydraulic Fracturing - 2D
+ * 
  * A project for calculation of fractures' propagation 
  * with multistage hydraulic fracturing in stratum 
- * using 2D-approach in quasi-static linear elastic theory.
+ * using two-dimensional approach in quasi-static linear elastic theory.
  * 
  * Used numerical method is displacement discontinuity method 
  * by Crouch (Crouch, S.L. and Starfield, A.M. (1983).
@@ -22,57 +24,27 @@
  */
 
 
-void loadTask(Stratum &stratum, const char* taskfile);
-
-int main(int argc, char** argv) {
-	int opt = 0;
-	char *taskfile;
-	bool drawDisplacement = false;
-	while ((opt = getopt(argc, argv, "t:d:")) != -1) {
-		switch (opt) {
-			case 't': taskfile = optarg;
-				break;
-			case 'd': drawDisplacement = true;
-				break;
-			case '?': {
-				info("Usage:\t./mgrp-2d -t name_of_taskfile");
-				exit(-1);
-			}
-		}
-	}
-	
-	info("MGRP-2D is running ...");
-	Stratum stratum;
-	try {
-		loadTask(stratum, taskfile);
-	} catch (const char *str) {
-		print("Loading task is failed:\n", str);
-		exit(-1);
-	}
-	stratum.calculate();
-	stratum.visualize();
-	if ( drawDisplacement )
-		stratum.drawDisplacements();
-	info("MGRP-2D finished the work.\n");
-	return 0;
-}
-
+/**
+ * Function to load input data and parameters from xml-file.
+ * @param stratum an instance of Stratum to set parameters
+ * @param taskfile a file to load from
+ */
 void loadTask(Stratum &stratum, const char* taskfile) {
 	info("Loading task from", taskfile, "...");
 	TiXmlDocument *xml_file = new TiXmlDocument(taskfile);
-	if(!xml_file->LoadFile()) {
-		throw("Specified taskfile is invalid");
+	if (!xml_file->LoadFile()) {
+		throw ("Specified taskfile is invalid");
 	}
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
-	
+
 	TiXmlElement *xml_system = xml_task->FirstChildElement("system");
 	std::string tip = xml_system->Attribute("tip");
 	std::string rotation = xml_system->Attribute("rotation");
-	
+
 	TiXmlElement *xml_stratum = xml_task->FirstChildElement("stratum");
 	TiXmlElement *xml_elastic_modules = xml_stratum->FirstChildElement("elastic_modules");
-	double G = atof( xml_elastic_modules->Attribute("G") );
-	double nu = atof( xml_elastic_modules->Attribute("nu") );
+	double G = atof(xml_elastic_modules->Attribute("G"));
+	double nu = atof(xml_elastic_modules->Attribute("nu"));
 	stratum.setRheology(G, nu);
 
 	TiXmlElement *xml_external_stresses = xml_stratum->FirstChildElement("external_stresses");
@@ -87,7 +59,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	double Ymin = atof(xml_ranges->Attribute("Ymin"));
 	double Ymax = atof(xml_ranges->Attribute("Ymax"));
 	stratum.setRanges(Xmin, Xmax, Ymin, Ymax);
-	
+
 	TiXmlElement *xml_fractures = xml_task->FirstChildElement("fractures");
 	TiXmlElement *xml_fracture = xml_fractures->FirstChildElement("fracture");
 	int numberOfFractures = 0;
@@ -99,29 +71,63 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	xml_fracture = xml_fractures->FirstChildElement("fracture");
 	while (xml_fracture != NULL) {
 		int number = atoi(xml_fracture->Attribute("number"));
-		
+
 		TiXmlElement *initial = xml_fracture->FirstChildElement("initial");
 		double x = atof(initial->Attribute("x"));
 		double y = atof(initial->Attribute("y"));
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
-		
+
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
-		int numOfElems = atoi(elements->Attribute("number_of_elements")) + 4;
+		int numOfLmnts = atoi(elements->Attribute("number_of_elements")) + 4;
 		// Number of elements in fracture is always odd because 
 		// it doesn't matter but is very helpful
-		if (numOfElems % 2 == 0) numOfElems += 1;
-		double half_length = atof(elements->Attribute("half-length"));
-		
+		if (numOfLmnts % 2 == 0) numOfLmnts += 1;
+		double halfLengthOfLmnts = atof(elements->Attribute("half-length"));
+
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
 		double a = atof(xml_pressure->Attribute("a"));
 		double b = atof(xml_pressure->Attribute("b"));
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
 
-		stratum.addFracture(number, x, y, beta, half_length,
-						numOfElems, a, b, c, pressureType, tip, rotation);
+		stratum.addFracture(number, numOfLmnts, x, y, beta, halfLengthOfLmnts,
+				a, b, c, pressureType, tip, rotation);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 
 	}
 	info("Task from", taskfile, "is loaded");
+}
+
+
+int main(int argc, char** argv) {
+	int opt = 0;
+	char *taskfile;
+	bool drawDisplacement = false;
+	while ((opt = getopt(argc, argv, "t:d:")) != -1) {
+		switch (opt) {
+			case 't': taskfile = optarg;
+				break;
+			case 'd': drawDisplacement = true;
+				break;
+			case '?': {
+				info("Usage:\t./mhf-2d -t name_of_taskfile");
+				exit(-1);
+			}
+		}
+	}
+	
+	info("MHF-2D is running ...");
+	Stratum stratum;
+	try {
+		loadTask(stratum, taskfile);
+	} catch (const char *str) {
+		print("Loading task is failed:\n", str);
+		exit(-1);
+	}
+	stratum.calculate();
+	stratum.visualize();
+	if ( drawDisplacement )
+		stratum.drawDisplacements();
+	info("MHF-2D finished the work.\n");
+	return 0;
 }

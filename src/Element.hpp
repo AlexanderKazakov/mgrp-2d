@@ -1,8 +1,9 @@
-#ifndef BREAK_HPP
-#define	BREAK_HPP
+#ifndef ELEMENT_HPP
+#define	ELEMENT_HPP
 
 #include <cmath>
 #include <iostream>
+
 #include "Field.hpp"
 #include "util.hpp"
 
@@ -12,15 +13,15 @@
  * 
  */
 
-class Break {
+class Element {
 public:
-	double Ds;	//	Break along
-	double Dn;	//	Break across
-	double Cx;	//	Center on x
-	double Cy;	//	Center on y
-	double beta;	//	Angle to x
+	double Ds; // displacement discontinuity along element
+	double Dn; // displacement discontinuity across element
+	double Cx; // Center on x
+	double Cy; // Center on y
+	double beta; //	Angle to x
 	
-	Break();
+	Element();
 	/**
 	 * Constructor for boundary element
      * @param a	half-length	
@@ -30,8 +31,8 @@ public:
      * @param G shear modulus of stratum
      * @param nu Poisson's ratio of stratum
      */
-	Break(double a, double Cx, double Cy, double beta, double G, double nu);
-	~Break();
+	Element(double a, double Cx, double Cy, double beta, double G, double nu);
+	~Element();
 	/**
 	 * Get the right-hand side corresponding to Ds of this element 
 	 * in the linear system on displacement discontinuities 
@@ -45,31 +46,37 @@ public:
      */
 	double getBn() const;
 	/**
+     * @return half-length of the element
+     */
+	double getA() const;
+	/**
      * @param _sigmaN value to set as sigmaN
      */
 	void setSigmaN(const double &_sigmaN);
 	/**
-	 * Calculate the components of the matrix of linear system on displacement 
-	 * discontinuities corresponding to impact of this element on element break2
-     * @param break2 element to calculate impact on
-     * @param Ass impact of this->Ds on break2.Ds
-     * @param Asn impact of this->Ds on break2.Dn
-     * @param Ans impact of this->Dn on break2.Ds
-     * @param Ann impact of this->Dn on break2.Dn
+	 * Set impact of external fractures and stresses at infinity on the element
+     * @param field 
      */
-	void calculateImpactOn(const Break &break2, double &Ass, double &Asn, double &Ans, double &Ann);
+	void setExternalImpact(const Field &field);
+	/**
+	 * Calculate the components of the matrix of linear system on displacement 
+	 * discontinuities corresponding to impact of this element on element lmnt2
+     * @param lmnt2 element to calculate impact on
+     * @param Ass impact of this->Ds on lmnt2.Ds
+     * @param Asn impact of this->Ds on lmnt2.Dn
+     * @param Ans impact of this->Dn on lmnt2.Ds
+     * @param Ann impact of this->Dn on lmnt2.Dn
+     */
+	void calculateImpactOn(const Element &lmnt2, double &Ass, double &Asn,
+	                                             double &Ans, double &Ann) const;
 	/**
 	 * Calculate impact of this element on field in the point (x_glob, y_glob)
      * @param x_glob x-coord in global system of coordinates
      * @param y_glob y-coord in global system of coordinates
      * @return field in (x_glob, y_glob)
      */
-	Field calculateImpactInPoint(const double &x_glob, const double &y_glob) const;
-	/**
-	 * Set impact of external fractures and stresses at infinity on the element
-     * @param field 
-     */
-	void setExternalImpact(Field field);
+	Field calculateImpactInPoint(const double &x_glob, 
+	                             const double &y_glob) const;
 	/**
      * @return Mode I stress intensity factor near the element
      */
@@ -78,15 +85,14 @@ public:
      * @return Mode II stress intensity factor near the element
      */
 	double K2() const;
-	double getA() const;
 	
 private:
-	double G, nu;	//	Rheology parameters
-	double a;	//	Half-length
-	double sigmaN;	//	Impact of the inner fluid
-	double sigmaS;	//	Impact of the inner fluid
-	double externalSigmaN;	//	Impact of already existing fractures 
-	double externalSigmaS;	//	Impact of already existing fractures
+	double G, nu; // Rheology parameters
+	double a; // Half-length
+	double sigmaN; // Impact of the inner breaker
+	double sigmaS; // Impact of the inner breaker
+	double externalSigmaN; // Impact of already existing fractures 
+	double externalSigmaS; // Impact of already existing fractures
 	
 	// Functions used in calculation of impact of element in point (x, y)
 	double F1(const double &x, const double &y) const;
@@ -100,7 +106,7 @@ private:
 };
 
 namespace std {
-	inline std::ostream& operator<<(std::ostream &os, const Break &brk) {
+	inline std::ostream& operator<<(std::ostream &os, const Element &brk) {
 		os << brk.Cx - brk.getA() << "\t" << brk.Cx << "\t" << brk.Cx + brk.getA() //<< "\t" << brk.Cy
 				//<< "\t" << brk.Ds << "\t" << brk.Dn 
 				//<< "\t" << brk.getBs() << "\t" << brk.getBn()  
@@ -109,5 +115,5 @@ namespace std {
 	};
 }
 
-#endif	/* BREAK_HPP */
+#endif	/* ELEMENT_HPP */
 
