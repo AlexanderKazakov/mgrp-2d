@@ -2,6 +2,7 @@
 #define	BREAKER_HPP
 
 #include <string>
+#include <vector>
 
 #include "Element.hpp"
 #include "util.hpp"
@@ -52,7 +53,8 @@ public:
      * @param lmnts pointer to the middle (!) of the lmnts of the fracture
      * @param numOfCalcLmnts actual number of lmnts in the fracture
      */
-	void calculatePressure(Element *lmnts, int numOfCalcLmnts) const;
+	void calculatePressure(std::vector<Element> &lmntsL, 
+	                       std::vector<Element> &lmntsR) const;
 private:
 	double a, b, c; // numerical pressure parameters
 	std::string pressureType; // type of pressure distribution along the fracture

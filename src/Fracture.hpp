@@ -32,8 +32,10 @@ public:
      * @param stratum pointer to the stratum which owns the fracture
      * @param number index number of fracture
      * @param halfLengthOfLmnts half-length of boundary elements of fracture
-     * @param numOfLmnts required number of boundary elements at the end of
-	 * computation
+     * @param numOfLmntsL required number of boundary elements at the 
+	 * left part at the end of computation
+	 * @param numOfLmntsR required number of boundary elements at the 
+	 * right part at the end of computation
      * @param _a pressure parameter
      * @param _b pressure parameter
      * @param _c pressure parameter 
@@ -44,7 +46,7 @@ public:
 	 * calculation and calculation of direction of the fracture's growth,
 	 * "predictor" or "predictor-corrector"
      */
-	Fracture(Stratum *stratum, int number, int numOfLmnts, 
+	Fracture(Stratum *stratum, int number, int numOfLmntsL, int numOfLmntsR, 
 	         double halfLengthOfLmnts, double _a, double _b, double _c,
 	         std::string pressureType, std::string tip, std::string rotation);
 	~Fracture();
@@ -69,10 +71,15 @@ public:
      */
 	Field calculateImpactInPoint (const double &x, const double &y) const;
 	/**
-	 * Get number of elements in the fracture
-     * @return number of elements in the fracture
+	 * Get number of elements on the left edge of the fracture
+     * @return number of elements on the left edge of the fracture
      */
-	int getNumOfLmnts() const;
+	int getNumOfLmntsL() const;
+	/**
+	 * Get number of elements on the right edge of the fracture
+     * @return number of elements on the right edge of the fracture
+     */
+	int getNumOfLmntsR() const;
 	/**
 	 * Get points for drawing the fracture on the graph
      * @param x
@@ -81,35 +88,48 @@ public:
 	void getPointsForPlot(double *x, double *y) const;
 	/**
 	 * Get displacements v(x) for drawing on the graph 
+	 * (for testing purposes)
      * @param x
      * @param v
      */
 	void getPointsForDisplacementPlot(double* x, double* v) const;
 	/**
-     * @return half-length of the fracture
+     * @return length of the left part of the fracture
      */
-	double getHalfLength() const;
+	double getHalfLengthL() const;
+	/**
+     * @return length of the right part of the fracture
+     */
+	double getHalfLengthR() const;
+	
 	// It's necessary for fast and easy setting the pressure of the inner 
 	// breaker on every step of calculation.
 	friend class Breaker;
 private:
-	// if the fraction is stopped by compression on the edges
-	bool fractionIsStopped;
+	// if the fraction is stopped by compression on the left edge
+	bool fractionIsStoppedL;
+	// if the fraction is stopped by compression on the right edge
+	bool fractionIsStoppedR;
 	int number; // index number of fracture
-	int middle; // index of the initial element of the fracture
-	int front; // index of the one tip element of the fracture
-	int back; // index of the another tip element of the fracture
-	int numOfLmnts; // number of required elements
-	int numOfCalcLmnts; // number of already calculated elements
-	double G, nu; // rheology parameters
+	// number of required elements on the left edge
+	int numOfLmntsL; 
+	// number of required elements on the right edge
+	int numOfLmntsR; 
+	double G, nu; // rheology parameters of stratum
 	double a; // half-length of boundary elements
-	double halfLength; // half-length of the fracture
+	double halfLengthL; // length of the left part of the fracture
+	double halfLengthR; // length of the right part of the fracture
 	std::string tip; // rule to use special boundary element at the tip
 	// rule to use splitting on actual configuration's calculation 
 	// and calculation of direction of the fracture's growth
 	std::string rotation;
 		
-	Element *lmnts;	//	displacement discontinuity boundary elements
+	// displacement discontinuity boundary elements 
+	// at the left part of the fracture
+	std::vector<Element> lmntsL;	
+	// displacement discontinuity boundary elements 
+	// at the right part of the fracture
+	std::vector<Element> lmntsR;	
 	Breaker breaker;	//	class of the inner breaker
 	Stratum *stratum;	//	pointer to the stratum which owns the fracture
 	/**
@@ -128,7 +148,7 @@ private:
      * @param deltaBeta1 rotation of the left tip element towards its neighbour
      * @param deltaBeta2 rotation of the right tip element towards its neighbour
      */
-	void addNewLmnts(const double &deltaBeta1, const double &deltaBeta2);
+	void grow(const double &deltaBeta1, const double &deltaBeta2);
 	/**
 	 * Add two elements to the edges of fracture.
      * @param deltaBeta1 rotation of the first (left) element towards its neighbour

@@ -107,9 +107,9 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Element &brk) {
-		os << brk.Cx - brk.getA() << "\t" << brk.Cx << "\t" << brk.Cx + brk.getA() //<< "\t" << brk.Cy
+		os << "\t" << brk.Cx
 				//<< "\t" << brk.Ds << "\t" << brk.Dn 
-				//<< "\t" << brk.getBs() << "\t" << brk.getBn()  
+				<< "\t" << brk.getBs() << "\t" << brk.getBn() 
 				<< std::endl;
 		return os;
 	};

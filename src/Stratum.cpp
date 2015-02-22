@@ -14,8 +14,9 @@ void Stratum::addFracture(int number, int numOfLmnts,
                           std::string pressureType, std::string tip, 
                           std::string rotation) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
-	fractures.push_back( Fracture(this, number, numOfLmnts, halfLengthOfLmnts, 
-                                  a, b, c, pressureType, tip, rotation));
+	fractures.push_back( Fracture(this, number, numOfLmnts / 2, numOfLmnts / 2,
+			                      halfLengthOfLmnts, a, b, c, 
+			                      pressureType, tip, rotation) );
 	fractures.back().allocateLmnts(x, y, beta);
 	breakerOfFirstFracture.setType(a, b, c, pressureType);
 }
@@ -84,10 +85,10 @@ void Stratum::visualize() const{
 	info("Visualisation is done.");
 }
 
-void Stratum::drawDisplacements() const{
+void Stratum::drawDisplacements() const {
 	info("Drawing displacements ...");
 	auto fracture = fractures.begin();
-	int N = fracture->getNumOfLmnts();
+	int N = fracture->getNumOfLmntsL() + fracture->getNumOfLmntsR();
 	double *_x = new double[N];
 	double *_v = new double[N];
 	// numerical results
@@ -113,13 +114,13 @@ void Stratum::drawDisplacements() const{
 	// analytical solution
 	if ( pressureType == "const" ) {
 		for (int i = 0; i < N; i++) {
-			double l = fracture->getHalfLength();
+			double l = fracture->getHalfLengthL();
 			double x = Cx.a[i];
 			v.a[i] = (Syy - c) / G * (1 - nu) * sqrt(l*l - x*x);
 		}
 	} else if ( pressureType == "lag" ) {
 		for (int i = 0; i < N; i++) {
-			double l = fracture->getHalfLength();
+			double l = fracture->getHalfLengthL();
 			double x = Cx.a[i];
 			double p = - c;
 			double sigma = Syy - c;
@@ -152,7 +153,7 @@ void Stratum::drawFractures(mglGraph& gr) const{
 	info("Drawing fractures ...");
 	auto fracture = fractures.begin();
 	while (fracture != fractures.end()) {
-		int N = fracture->getNumOfLmnts() + 1;
+		int N = fracture->getNumOfLmntsL() + fracture->getNumOfLmntsR() + 1;
 		double *_x = new double[N];
 		double *_y = new double[N];
 		fracture->getPointsForPlot(_x, _y);

@@ -79,9 +79,6 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
 		int numOfLmnts = atoi(elements->Attribute("number_of_elements")) + 4;
-		// Number of elements in fracture is always odd because 
-		// it doesn't matter but is very helpful
-		if (numOfLmnts % 2 == 0) numOfLmnts += 1;
 		double halfLengthOfLmnts = atof(elements->Attribute("half-length"));
 
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
