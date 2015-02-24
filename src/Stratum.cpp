@@ -11,12 +11,11 @@ void Stratum::addFracture(int number, int numOfElements,
                           double x, double y, double beta, 
                           double halfLengthOfElements,
                           double a, double b, double c,
-                          std::string pressureType, std::string tip, 
-                          std::string rotation) {
+                          std::string pressureType, std::string tip) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
 	fractures.push_back( Fracture(this, number, numOfElements,
 			                      halfLengthOfElements, a, b, c, 
-			                      pressureType, tip, rotation) );
+			                      pressureType, tip) );
 	fractures.back().allocateElements(x, y, beta);
 	breakerOfFirstFracture.setType(a, b, c, pressureType);
 }
@@ -48,24 +47,34 @@ void Stratum::setSequence(const std::string _sequence) {
 	sequence = _sequence;
 }
 
+void Stratum::setRotation(const std::string _rotation) {
+	rotation = _rotation;
+}
+
 void Stratum::reserve(const int numberOfFractures) {
 	fractures.reserve(numberOfFractures);
 }
 
-void Stratum::calculate() {
+void Stratum::calculateTask() {
 	info("Starting calculation ...");
+	
 	if (sequence == "series") {
-		currentFracture = fractures.begin();
-		while (currentFracture != fractures.end()) {	
-			currentFracture->calculate();
-			currentFracture++;	
+		beginFracture = fractures.begin();
+		endFracture = fractures.begin() + 1;
+		while (beginFracture != fractures.end()) {
+			calculate();
+			beginFracture++;
+			if (endFracture != fractures.end()) endFracture++;
 		}
+		
 	} else if (sequence == "parallel") {
-		currentFracture = fractures.begin();
-		parallelCalculate();
-		currentFracture = fractures.end();
+		beginFracture = fractures.begin();
+		endFracture = fractures.end();
+		calculate();
+		beginFracture = fractures.end();
+		
 	} else if (sequence == "series with feedback") {
-		currentFracture = fractures.begin();
+		beginFracture = fractures.begin();
 		// TODO
 	}
 	
@@ -75,7 +84,7 @@ void Stratum::calculate() {
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) const{
 	auto fracture = fractures.begin();
 	Field field;
-	while (fracture != currentFracture) {
+	while (fracture != beginFracture) {
 		field += fracture->calculateImpactInPoint(x, y);
 		fracture++;
 	}
@@ -163,28 +172,35 @@ void Stratum::drawDisplacements() const {
 	delete [] _v;
 }
 
-void Stratum::parallelCalculate() {
-	for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++)
-		frac1->initialExternalImpactSet();
+void Stratum::calculate() {
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+		frac1->setExternalImpactAndBreakerPressure();
 	
-	parallelCalculateElements();
+	calculateElements();
 	bool calculationIsCompleted = true;
-	for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++)
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
 		calculationIsCompleted *= frac1->isCompleted();
 
 	while( ! calculationIsCompleted ) {
-		for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++)
+		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
 			frac1->grow();
-		parallelCalculateElements();
+		if (rotation == "predictor-corrector") {
+			// Clarifying the direction of fracture's growth like it is
+			// usually done in "predictor-corrector" methods
+			calculateElements();
+			for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+				frac1->correctRotation();
+		}
+		calculateElements();
 		calculationIsCompleted = true;
-		for (auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++)
+		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
 			calculationIsCompleted *= frac1->isCompleted();
 	}
 }
 
-void Stratum::parallelCalculateElements() {
+void Stratum::calculateElements() {
 	int N = 0;
-	for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++) {
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
 		N += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
 	}
 	gsl_matrix *A = gsl_matrix_alloc(N, N);
@@ -192,13 +208,13 @@ void Stratum::parallelCalculateElements() {
 	gsl_vector *x = gsl_vector_alloc(N);
 
 	int i1 = 0;
-	for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++) {
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
 		int i2 = 0;
-		for(auto frac2 = fractures.begin(); frac2 != fractures.end(); frac2++) {
-			frac1->fillInParallelCalcMatrix(*frac2, A, i1, i2);
+		for(auto frac2 = beginFracture; frac2 != endFracture; frac2++) {
+			frac1->fillInMatrixA(*frac2, A, i1, i2);
 			i2 += 2 * (frac2->getNumOfElementsL() + frac2->getNumOfElementsR());
 		}
-		frac1->fillInParallelCalcVectorB(b, i1);
+		frac1->fillInVectorB(b, i1);
 		i1 += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
 	}
 	
@@ -209,8 +225,8 @@ void Stratum::parallelCalculateElements() {
 	gsl_linalg_LU_solve(A, p, b, x);
 	
 	int i = 0;
-	for(auto frac1 = fractures.begin(); frac1 != fractures.end(); frac1++) {
-		frac1->takeDDfromParallelCalcVectorX(x, i);
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
+		frac1->takeDDfromVectorX(x, i);
 		i += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
 	}
 	

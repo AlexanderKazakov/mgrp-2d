@@ -44,15 +44,11 @@ public:
      * @param pressureType type of pressure of the inner breaker
      * @param tip rule to use special boundary element at the tip of the
 	 * fracture, "const" or TODO
-     * @param rotation rule to use splitting on actual configuration's
-	 * calculation and calculation of direction of the fracture's growth,
-	 * "predictor" or "predictor-corrector"
      */
 	void addFracture(int number, int numOfElements, 
                      double x, double y, double beta, double halfLengthOfElements,
                      double a, double b, double c, 
-                     std::string pressureType, std::string tip, 
-                     std::string rotation);
+                     std::string pressureType, std::string tip);
 	/**
 	 * Set rheology parameters of stratum
      * @param _G shear modulus
@@ -89,19 +85,25 @@ public:
 	 */
 	void setSequence(const std::string _sequence);
 	/**
-	 * Reserve enough memory for numberOfFractures fractures.
-	 * It's very important for correct work of the program!
+	 * @param rotation rule to use splitting the process of fracture growing 
+	 * on actual configuration's calculation and calculation of direction 
+	 * of the fractures' growth, "predictor" or "predictor-corrector"
+     */
+	void setRotation(const std::string _rotation);
+	/**
+	 * Reserve enough memory for numberOfFractures fractures in 
+	 * vector fractures
      * @param numberOfFractures 
      */
 	void reserve(const int numberOfFractures);
 	/**
-	 * Calculate the next one fracture supposing that all previous 
-	 * fractures stay constant
+	 * Calculate all required in task
      */
-	void calculate();
+	void calculateTask();
 	/**
-	 * Calculate field in point (x, y) caused by existing fractures and
-	 * external stresses
+	 * Calculate field in point (x, y) caused by already calculated ( from 
+	 * fractures.begin() to (--beginFracture) ) fractures 
+	 * and external (at infinity) stresses in the stratum
      * @param x	x-coord of point
      * @param y y-coord of point
      * @return Actual Field in (x, y)
@@ -125,27 +127,35 @@ private:
 	double Sxy; 
 	double Syy;
 	std::vector<Fracture> fractures; // all fractures
-	// the iterator on the fracture that is calculated currently
-	std::vector<Fracture>::iterator currentFracture;
+	// the iterator on the first fracture of those which are calculated currently
+	std::vector<Fracture>::iterator beginFracture;
+	// the iterator on the last fracture of those which are calculated currently
+	std::vector<Fracture>::iterator endFracture;
 	// for visualization purpose, in test2.py
 	Breaker breakerOfFirstFracture;
 	// rule on the sequence of calculation of several fractures,
 	// "series", "parallel" or "series with feedback"
 	std::string sequence;
+	// rule to use splitting on actual configuration's calculation 
+	// and calculation of direction of the fracture's growth
+	std::string rotation;
 	/**
-	 * Calculate all the fractures those grow together at the same time
+	 * Calculate the fractures from beginFracture to endFracture 
+	 * those grow together at the same time
      */
-	void parallelCalculate();
+	void calculate();
 	/**
 	 * Fill in the system of linear equations on displacement 
-	 * discontinuities of elements (for all fractures together),
+	 * discontinuities of elements (for all fractures 
+	 * from beginFracture to endFracture)
+	 * A * x = b, 
 	 * solve it by GSL library and set new values
 	 * of displacement discontinuity to elements.
 	 * 
 	 * It's the main idea of the program. It uses displacement discontinuity 
 	 * boundary method proposed by Crouch.
      */
-	void parallelCalculateElements();
+	void calculateElements();
 	/**
 	 * Draw actual fractures
      * @param gr graph to draw on

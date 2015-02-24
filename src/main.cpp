@@ -42,6 +42,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	std::string tip = xml_system->Attribute("tip");
 	std::string rotation = xml_system->Attribute("rotation");
 	stratum.setSequence(sequence);
+	stratum.setRotation(rotation);
 
 	TiXmlElement *xml_stratum = xml_task->FirstChildElement("stratum");
 	TiXmlElement *xml_elastic_modules = xml_stratum->FirstChildElement("elastic_modules");
@@ -90,7 +91,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		std::string pressureType = (xml_pressure->Attribute("type"));
 
 		stratum.addFracture(number, numOfElements, x, y, beta, halfLengthOfElements,
-				a, b, c, pressureType, tip, rotation);
+				a, b, c, pressureType, tip);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 
 	}
@@ -123,7 +124,7 @@ int main(int argc, char** argv) {
 		print("Loading task is failed:\n", str);
 		exit(-1);
 	}
-	stratum.calculate();
+	stratum.calculateTask();
 	stratum.visualize();
 	if ( drawDisplacement )
 		stratum.drawDisplacements();
