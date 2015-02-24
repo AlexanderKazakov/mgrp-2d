@@ -50,11 +50,11 @@ public:
 	/**
 	 * Calculate pressure of the breaker in the fracture and set sigmaN
 	 * of elements of fracture to -pressure
-     * @param lmnts pointer to the middle (!) of the lmnts of the fracture
-     * @param numOfCalcLmnts actual number of lmnts in the fracture
+     * @param elements pointer to the middle (!) of the elements of the fracture
+     * @param numOfCalcElements actual number of elements in the fracture
      */
-	void calculatePressure(std::vector<Element> &lmntsL, 
-	                       std::vector<Element> &lmntsR) const;
+	void calculatePressure(std::vector<Element> &elementsL, 
+	                       std::vector<Element> &elementsR) const;
 private:
 	double a, b, c; // numerical pressure parameters
 	std::string pressureType; // type of pressure distribution along the fracture

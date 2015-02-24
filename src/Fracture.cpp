@@ -5,12 +5,12 @@
 Fracture::Fracture() {
 }
 
-Fracture::Fracture(Stratum *stratum, int number, int numOfLmntsL, int numOfLmntsR,
-                   double halfLengthOfLmnts, double _a, double _b, double _c,
+Fracture::Fracture(Stratum *stratum, int number, int numOfElements,
+                   double halfLengthOfElements, double _a, double _b, double _c,
                    std::string pressureType, std::string tip,
                    std::string rotation): 
-                   stratum(stratum), number(number), numOfLmntsL(numOfLmntsL),
-                   numOfLmntsR(numOfLmntsR), a(halfLengthOfLmnts),
+                   stratum(stratum), number(number), numOfElements(numOfElements),
+                   a(halfLengthOfElements),
                    rotation(rotation), tip(tip) {
 	fractionIsStoppedL = false;
 	fractionIsStoppedR = false;
@@ -23,88 +23,86 @@ Fracture::Fracture(Stratum *stratum, int number, int numOfLmntsL, int numOfLmnts
 Fracture::~Fracture() {
 }
 
-void Fracture::allocateLmnts(double x, double y, double beta) {
-	lmntsL.reserve(numOfLmntsL);
-	lmntsR.reserve(numOfLmntsR);
+void Fracture::allocateElements(double x, double y, double beta) {
+	elementsL.reserve(numOfElements / 2);
+	elementsR.reserve(numOfElements / 2);
 	
 	// Add three small tip elements to the corners
-	lmntsR.push_back(Element(5 * a / 9, x + 5 * a / 9 * cos(beta), 
-	                               y + 5 * a / 9 * sin(beta), beta, G, nu));
-	lmntsR.push_back(Element(a / 3, x + 13 * a / 9 * cos(beta), 
-	                           y + 13 * a / 9 * sin(beta), beta, G, nu));
-	lmntsR.push_back(Element(a / 9, x + 17 * a / 9 * cos(beta), 
-	                           y + 17 * a / 9 * sin(beta), beta, G, nu));
-	lmntsL.push_back(Element(5 * a / 9, x - 5 * a / 9 * cos(beta), 
-	                               y - 5 * a / 9 * sin(beta), beta, G, nu));
-	lmntsL.push_back(Element(a / 3, x - 13 * a / 9 * cos(beta), 
-	                           y - 13 * a / 9 * sin(beta), beta, G, nu));
-	lmntsL.push_back(Element(a / 9, x - 17 * a / 9 * cos(beta), 
-	                           y - 17 * a / 9 * sin(beta), beta, G, nu));
+	elementsR.push_back(Element(5 * a / 9, x + 5 * a / 9 * cos(beta), 
+	                                       y + 5 * a / 9 * sin(beta), beta, G, nu));
+	elementsR.push_back(Element(a / 3, x + 13 * a / 9 * cos(beta), 
+	                                   y + 13 * a / 9 * sin(beta), beta, G, nu));
+	elementsR.push_back(Element(a / 9, x + 17 * a / 9 * cos(beta), 
+	                                   y + 17 * a / 9 * sin(beta), beta, G, nu));
+	elementsL.push_back(Element(5 * a / 9, x - 5 * a / 9 * cos(beta), 
+	                                       y - 5 * a / 9 * sin(beta), beta, G, nu));
+	elementsL.push_back(Element(a / 3, x - 13 * a / 9 * cos(beta), 
+	                                   y - 13 * a / 9 * sin(beta), beta, G, nu));
+	elementsL.push_back(Element(a / 9, x - 17 * a / 9 * cos(beta), 
+	                                   y - 17 * a / 9 * sin(beta), beta, G, nu));
 	
-	halfLengthL = halfLengthR = 2*a;
+	leftLength = rightLength = 2*a;
+}
+
+bool Fracture::isCompleted() const {
+	return ((elementsL.size() + elementsR.size()) >= numOfElements) ||
+	       (fractionIsStoppedL && fractionIsStoppedR);
 }
 
 Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
 	Field field;
-	for (auto lmnt = lmntsL.begin(); lmnt != lmntsL.end(); lmnt++) {
-		field += lmnt->calculateImpactInPoint(x, y);
+	for (auto element = elementsL.begin(); element != elementsL.end(); element++) {
+		field += element->calculateImpactInPoint(x, y);
 	}
-	for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-		field += lmnt->calculateImpactInPoint(x, y);
+	for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+		field += element->calculateImpactInPoint(x, y);
 	}
 	return field;
 }
 
 void Fracture::calculate() {
 	info("Starting calculation of fracture number", number, "...");
-	for (auto lmnt = lmntsL.begin(); lmnt != lmntsL.end(); lmnt++) 
-		lmnt->setExternalImpact
-	                     (stratum->calculateImpactInPoint(lmnt->Cx, lmnt->Cy));
-	for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) 
-		lmnt->setExternalImpact
-	                     (stratum->calculateImpactInPoint(lmnt->Cx, lmnt->Cy));
-	breaker.calculatePressure(lmntsL, lmntsR);
-	
-	calculateLmnts();
-	if (fractionIsStoppedL * fractionIsStoppedR)
-		info("Fracture number", number, "is stopped.");
-	else if (fractionIsStoppedL)
-		info("Fracture number", number, "is stopped at the left corner.");
-	else if (fractionIsStoppedR)
-		info("Fracture number", number, "is stopped at the right corner.");
+	initialExternalImpactSet();
+	calculateElements();
 				
-	while ( ! (fractionIsStoppedL * fractionIsStoppedR) ) {	
-		double deltaBeta1 = calcAngleOfRotation(lmntsL.back());
-		double deltaBeta2 = calcAngleOfRotation(lmntsR.back());
+	while ( ! isCompleted() ) {	
+		double deltaBeta1 = calcAngleOfRotation(elementsL.back());
+		double deltaBeta2 = calcAngleOfRotation(elementsR.back());
 		
 		// TODO - add the opportunity to work with a usual const tip element
 		grow(deltaBeta1, deltaBeta2);
 		if (rotation == "predictor-corrector") {
 			//	Clarifying the direction of fracture's growth like it is
 			//	usually done in "predictor-corrector" methods
-			calculateLmnts();
-			deltaBeta1 = (calcAngleOfRotation(lmntsL.back()) + deltaBeta1) / 2;
-			deltaBeta2 = (calcAngleOfRotation(lmntsR.back()) + deltaBeta2) / 2;		
+			calculateElements();
+			deltaBeta1 = (calcAngleOfRotation(elementsL.back()) + deltaBeta1) / 2;
+			deltaBeta2 = (calcAngleOfRotation(elementsR.back()) + deltaBeta2) / 2;		
 			replaceTipElements(deltaBeta1, deltaBeta2);
 		}
-		calculateLmnts();
-		if (fractionIsStoppedL * fractionIsStoppedR)
-			info("Fracture number", number, "is stopped.");
-		else if (fractionIsStoppedL)
-			info("Fracture number", number, "is stopped at the left corner.");
-		else if (fractionIsStoppedR)
-			info("Fracture number", number, "is stopped at the right corner.");
-		
-		if ( (lmntsL.size() >= numOfLmntsL) && (lmntsR.size() >= numOfLmntsR) )
-			break;
-	}
-	
+		calculateElements();
+	}	
 	info("Fracture number", number, "is calculated.");
 }
 
-void Fracture::calculateLmnts() {
+void Fracture::grow() {
+	double deltaBeta1 = calcAngleOfRotation(elementsL.back());
+	double deltaBeta2 = calcAngleOfRotation(elementsR.back());
+	grow(deltaBeta1, deltaBeta2);
+}
+
+void Fracture::initialExternalImpactSet() {
+	for (auto element = elementsL.begin(); element != elementsL.end(); element++) 
+		element->setExternalImpact
+	                     (stratum->calculateImpactInPoint(element->Cx, element->Cy));
+	for (auto element = elementsR.begin(); element != elementsR.end(); element++) 
+		element->setExternalImpact
+	                     (stratum->calculateImpactInPoint(element->Cx, element->Cy));
+	breaker.calculatePressure(elementsL, elementsR);
+}
+
+void Fracture::calculateElements() {
 	double Ass, Asn, Ans, Ann;
-	int N = 2 * (lmntsL.size() + lmntsR.size());
+	int N = 2 * (elementsL.size() + elementsR.size());
 	gsl_matrix *A = gsl_matrix_alloc(N, N);
 	gsl_vector *b = gsl_vector_alloc(N);
 	gsl_vector *x = gsl_vector_alloc(N);
@@ -112,48 +110,48 @@ void Fracture::calculateLmnts() {
 	// Filling in the matrix and right-hand-side vector of system
 	// of linear equations on displacement discontinuities
 	int i = 0;
-	for (auto lmnt1 = lmntsL.rbegin(); lmnt1 != lmntsL.rend(); lmnt1++) {
+	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
 		int j = 0;
-		for (auto lmnt2 = lmntsL.rbegin(); lmnt2 != lmntsL.rend(); lmnt2++) {
-			lmnt2->calculateImpactOn(*lmnt1, Ass, Asn, Ans, Ann);
+		for (auto element2 = elementsL.rbegin(); element2 != elementsL.rend(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
 			gsl_matrix_set(A, i, j, Ass);
 			gsl_matrix_set(A, i, j + 1, Asn);
 			gsl_matrix_set(A, i + 1, j, Ans);
 			gsl_matrix_set(A, i + 1, j + 1, Ann);
 			j += 2;
 		}
-		for (auto lmnt2 = lmntsR.begin(); lmnt2 != lmntsR.end(); lmnt2++) {
-			lmnt2->calculateImpactOn(*lmnt1, Ass, Asn, Ans, Ann);
+		for (auto element2 = elementsR.begin(); element2 != elementsR.end(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
 			gsl_matrix_set(A, i, j, Ass);
 			gsl_matrix_set(A, i, j + 1, Asn);
 			gsl_matrix_set(A, i + 1, j, Ans);
 			gsl_matrix_set(A, i + 1, j + 1, Ann);
 			j += 2;
 		}
-		gsl_vector_set(b, i, lmnt1->getBs());
-		gsl_vector_set(b, i + 1, lmnt1->getBn());
+		gsl_vector_set(b, i, element1->getBs());
+		gsl_vector_set(b, i + 1, element1->getBn());
 		i += 2;
 	}
-	for (auto lmnt1 = lmntsR.begin(); lmnt1 != lmntsR.end(); lmnt1++) {
+	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
 		int j = 0;
-		for (auto lmnt2 = lmntsL.rbegin(); lmnt2 != lmntsL.rend(); lmnt2++) {
-			lmnt2->calculateImpactOn(*lmnt1, Ass, Asn, Ans, Ann);
+		for (auto element2 = elementsL.rbegin(); element2 != elementsL.rend(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
 			gsl_matrix_set(A, i, j, Ass);
 			gsl_matrix_set(A, i, j + 1, Asn);
 			gsl_matrix_set(A, i + 1, j, Ans);
 			gsl_matrix_set(A, i + 1, j + 1, Ann);
 			j += 2;
 		}
-		for (auto lmnt2 = lmntsR.begin(); lmnt2 != lmntsR.end(); lmnt2++) {
-			lmnt2->calculateImpactOn(*lmnt1, Ass, Asn, Ans, Ann);
+		for (auto element2 = elementsR.begin(); element2 != elementsR.end(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
 			gsl_matrix_set(A, i, j, Ass);
 			gsl_matrix_set(A, i, j + 1, Asn);
 			gsl_matrix_set(A, i + 1, j, Ans);
 			gsl_matrix_set(A, i + 1, j + 1, Ann);
 			j += 2;
 		}
-		gsl_vector_set(b, i, lmnt1->getBs());
-		gsl_vector_set(b, i + 1, lmnt1->getBn());
+		gsl_vector_set(b, i, element1->getBs());
+		gsl_vector_set(b, i + 1, element1->getBn());
 		i += 2;
 	}
 	
@@ -172,150 +170,235 @@ void Fracture::calculateLmnts() {
 //	std::cout << std::endl;
 	
 	i = 0;
-	for (auto lmnt1 = lmntsL.rbegin(); lmnt1 != lmntsL.rend(); lmnt1++) {
-		lmnt1->Ds = gsl_vector_get(x, i);
-		lmnt1->Dn = gsl_vector_get(x, i + 1);
+	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
+		element1->Ds = gsl_vector_get(x, i);
+		element1->Dn = gsl_vector_get(x, i + 1);
 		i += 2;
 	}
-	for (auto lmnt1 = lmntsR.begin(); lmnt1 != lmntsR.end(); lmnt1++) {
-		lmnt1->Ds = gsl_vector_get(x, i);
-		lmnt1->Dn = gsl_vector_get(x, i + 1);
+	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
+		element1->Ds = gsl_vector_get(x, i);
+		element1->Dn = gsl_vector_get(x, i + 1);
 		i += 2;
 	}
 	gsl_matrix_free(A);
 	gsl_vector_free(x);
 	gsl_vector_free(b);
 
-	if (lmntsL.back().Dn > 0)
+	if (elementsL.back().Dn > 0)
 		fractionIsStoppedL = true;
-	if (lmntsR.back().Dn > 0)
+	if (elementsR.back().Dn > 0)
 		fractionIsStoppedR = true;
-	
+	if (fractionIsStoppedL * fractionIsStoppedR)
+		info("Fracture number", number, "is stopped.");
+	else if (fractionIsStoppedL)
+		info("Fracture number", number, "is stopped at the left corner.");
+	else if (fractionIsStoppedR)
+		info("Fracture number", number, "is stopped at the right corner.");
 }
 
-double Fracture::calcAngleOfRotation(const Element &lmnt1) const {
-	double K1 = - lmnt1.Dn;
-	double K2 = - lmnt1.Ds;
+double Fracture::calcAngleOfRotation(const Element &element1) const {
+	double K1 = - element1.Dn;
+	double K2 = - element1.Ds;
 	Field tmp;
 	double beta = 2 * tmp.arctan(- 2 * K2, K1 + sqrt(K1 * K1 + 8 * K2 * K2) );
 	return beta;
 }
 
 void Fracture::grow(const double &deltaBeta1, const double &deltaBeta2) {
-	if ( (lmntsL.size() == 3) && (lmntsR.size() == 3) ) {
-		double beta0 = lmntsL.back().beta;
-		double x0 = lmntsL.front().Cx + 5 * a / 9 * cos(beta0);
-		double y0 = lmntsL.front().Cy + 5 * a / 9 * sin(beta0);
-		lmntsL.pop_back(); lmntsL.pop_back(); lmntsL.pop_back();
-		lmntsR.pop_back(); lmntsR.pop_back(); lmntsR.pop_back();
-		lmntsL.push_back(Element(a, x0 - a * cos(beta0), 
+	if ( (elementsL.size() == 3) && (elementsR.size() == 3) ) {
+		double beta0 = elementsL.back().beta;
+		double x0 = elementsL.front().Cx + 5 * a / 9 * cos(beta0);
+		double y0 = elementsL.front().Cy + 5 * a / 9 * sin(beta0);
+		elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+		elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+		elementsL.push_back(Element(a, x0 - a * cos(beta0), 
 	                                y0 - a * sin(beta0), beta0, G, nu));
-		lmntsL.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                     (lmntsL.back().Cx, lmntsL.back().Cy));
-		lmntsR.push_back(Element(a, x0 + a * cos(beta0), 
+		elementsL.back().setExternalImpact(stratum->calculateImpactInPoint
+	                                     (elementsL.back().Cx, elementsL.back().Cy));
+		elementsR.push_back(Element(a, x0 + a * cos(beta0), 
 	                                y0 + a * sin(beta0), beta0, G, nu));
-		lmntsR.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                     (lmntsL.back().Cx, lmntsL.back().Cy));
-		addNewLmnts(deltaBeta1, deltaBeta2, 5 * a / 9);
-		addNewLmnts(0, 0, a / 3);
-		addNewLmnts(0, 0, a / 9);
+		elementsR.back().setExternalImpact(stratum->calculateImpactInPoint
+	                                     (elementsL.back().Cx, elementsL.back().Cy));
+		addNewElements(deltaBeta1, deltaBeta2, 5 * a / 9);
+		addNewElements(0, 0, a / 3);
+		addNewElements(0, 0, a / 9);
 	} else {
-		double beta1 = lmntsL.back().beta;
-		double beta2 = lmntsR.back().beta;
-		lmntsL.pop_back(); lmntsL.pop_back(); lmntsL.pop_back();
-		lmntsR.pop_back(); lmntsR.pop_back(); lmntsR.pop_back();
-		halfLengthL -= 2*a; halfLengthR -= 2*a;
-		double oldDeltaBeta1 = beta1 - lmntsL.back().beta;
-		double oldDeltaBeta2 = beta2 - lmntsR.back().beta;
+		double beta1 = elementsL.back().beta;
+		double beta2 = elementsR.back().beta;
+		elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+		elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+		leftLength -= 2*a; rightLength -= 2*a;
+		double oldDeltaBeta1 = beta1 - elementsL.back().beta;
+		double oldDeltaBeta2 = beta2 - elementsR.back().beta;
 		
-		addNewLmnts(oldDeltaBeta1, oldDeltaBeta2, a);
-		addNewLmnts(deltaBeta1, deltaBeta2, 5 * a / 9);
-		addNewLmnts(0, 0, a / 3);
-		addNewLmnts(0, 0, a / 9);
+		addNewElements(oldDeltaBeta1, oldDeltaBeta2, a);
+		addNewElements(deltaBeta1, deltaBeta2, 5 * a / 9);
+		addNewElements(0, 0, a / 3);
+		addNewElements(0, 0, a / 9);
 	}
 	
-	breaker.calculatePressure(lmntsL, lmntsR);
+	breaker.calculatePressure(elementsL, elementsR);
 }
 
-void Fracture::addNewLmnts(const double& deltaBeta1, const double& deltaBeta2, 
+void Fracture::addNewElements(const double& deltaBeta1, const double& deltaBeta2, 
                                                      const double& half_length) {
-	double beta1 = lmntsL.back().beta + deltaBeta1;
-	double x1 = lmntsL.back().Cx - lmntsL.back().getA() * cos(lmntsL.back().beta) 
+	double beta1 = elementsL.back().beta + deltaBeta1;
+	double x1 = elementsL.back().Cx - elementsL.back().getA() * cos(elementsL.back().beta) 
 	                             - half_length * cos(beta1);
-	double y1 = lmntsL.back().Cy - lmntsL.back().getA() * sin(lmntsL.back().beta)
+	double y1 = elementsL.back().Cy - elementsL.back().getA() * sin(elementsL.back().beta)
 	                             - half_length * sin(beta1);
 
-	lmntsL.push_back(Element(half_length, x1, y1, beta1, G, nu));
-	lmntsL.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                         (lmntsL.back().Cx, lmntsL.back().Cy));
+	elementsL.push_back(Element(half_length, x1, y1, beta1, G, nu));
+	elementsL.back().setExternalImpact(stratum->calculateImpactInPoint
+	                                         (elementsL.back().Cx, elementsL.back().Cy));
 
-	beta1 = lmntsR.back().beta + deltaBeta2;
-	x1 = lmntsR.back().Cx + lmntsR.back().getA() * cos(lmntsR.back().beta) 
+	beta1 = elementsR.back().beta + deltaBeta2;
+	x1 = elementsR.back().Cx + elementsR.back().getA() * cos(elementsR.back().beta) 
 	                      + half_length * cos(beta1);
-	y1 = lmntsR.back().Cy + lmntsR.back().getA() * sin(lmntsR.back().beta)
+	y1 = elementsR.back().Cy + elementsR.back().getA() * sin(elementsR.back().beta)
 	                      + half_length * sin(beta1);
 
-	lmntsR.push_back(Element(half_length, x1, y1, beta1, G, nu));
-	lmntsR.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                         (lmntsR.back().Cx, lmntsR.back().Cy));
+	elementsR.push_back(Element(half_length, x1, y1, beta1, G, nu));
+	elementsR.back().setExternalImpact(stratum->calculateImpactInPoint
+	                                         (elementsR.back().Cx, elementsR.back().Cy));
 	
-	halfLengthL += 2 * half_length;
-	halfLengthR += 2 * half_length;
+	leftLength += 2 * half_length;
+	rightLength += 2 * half_length;
 }
 
 void Fracture::replaceTipElements(const double& deltaBeta1, const double& deltaBeta2) {
-	lmntsL.pop_back(); lmntsL.pop_back(); lmntsL.pop_back();
-	lmntsR.pop_back(); lmntsR.pop_back(); lmntsR.pop_back();
-	halfLengthL -= 2*a; halfLengthR -= 2*a;
-	addNewLmnts(deltaBeta1, deltaBeta2, 5 * a / 9);
-	addNewLmnts(0, 0, a / 3);
-	addNewLmnts(0, 0, a / 9);
-	breaker.calculatePressure(lmntsL, lmntsR);
+	elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+	elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+	leftLength -= 2*a; rightLength -= 2*a;
+	addNewElements(deltaBeta1, deltaBeta2, 5 * a / 9);
+	addNewElements(0, 0, a / 3);
+	addNewElements(0, 0, a / 9);
+	breaker.calculatePressure(elementsL, elementsR);
 }
 
-int Fracture::getNumOfLmntsL() const {
-	return lmntsL.size();
+void Fracture::fillInParallelCalcMatrix(const Fracture& frac2, gsl_matrix* A, 
+                                        int i1, int i2) const {
+	double Ass, Asn, Ans, Ann;
+	int i = i1;
+	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
+		int j = i2;
+		for (auto element2 = frac2.elementsL.rbegin(); 
+		          element2 != frac2.elementsL.rend(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
+			gsl_matrix_set(A, i, j, Ass);
+			gsl_matrix_set(A, i, j + 1, Asn);
+			gsl_matrix_set(A, i + 1, j, Ans);
+			gsl_matrix_set(A, i + 1, j + 1, Ann);
+			j += 2;
+		}
+		for (auto element2 = frac2.elementsR.begin(); 
+		          element2 != frac2.elementsR.end(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
+			gsl_matrix_set(A, i, j, Ass);
+			gsl_matrix_set(A, i, j + 1, Asn);
+			gsl_matrix_set(A, i + 1, j, Ans);
+			gsl_matrix_set(A, i + 1, j + 1, Ann);
+			j += 2;
+		}
+		i += 2;
+	}
+	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
+		int j = i2;
+		for (auto element2 = frac2.elementsL.rbegin(); 
+		          element2 != frac2.elementsL.rend(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
+			gsl_matrix_set(A, i, j, Ass);
+			gsl_matrix_set(A, i, j + 1, Asn);
+			gsl_matrix_set(A, i + 1, j, Ans);
+			gsl_matrix_set(A, i + 1, j + 1, Ann);
+			j += 2;
+		}
+		for (auto element2 = frac2.elementsR.begin(); 
+		          element2 != frac2.elementsR.end(); element2++) {
+			element2->calculateImpactOn(*element1, Ass, Asn, Ans, Ann);
+			gsl_matrix_set(A, i, j, Ass);
+			gsl_matrix_set(A, i, j + 1, Asn);
+			gsl_matrix_set(A, i + 1, j, Ans);
+			gsl_matrix_set(A, i + 1, j + 1, Ann);
+			j += 2;
+		}
+		i += 2;
+	}
 }
 
-int Fracture::getNumOfLmntsR() const {
-	return lmntsR.size();
+void Fracture::fillInParallelCalcVectorB(gsl_vector* b, int i) const {
+	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
+		gsl_vector_set(b, i, element1->getBs());
+		gsl_vector_set(b, i + 1, element1->getBn());
+		i += 2;
+	}
+	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
+		gsl_vector_set(b, i, element1->getBs());
+		gsl_vector_set(b, i + 1, element1->getBn());
+		i += 2;
+	}
+}
+
+void Fracture::takeDDfromParallelCalcVectorX(const gsl_vector* x, int i) {
+	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
+		element1->Ds = gsl_vector_get(x, i);
+		element1->Dn = gsl_vector_get(x, i + 1);
+		i += 2;
+	}
+	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
+		element1->Ds = gsl_vector_get(x, i);
+		element1->Dn = gsl_vector_get(x, i + 1);
+		i += 2;
+	}
+	if (elementsL.back().Dn > 0)
+		fractionIsStoppedL = true;
+	if (elementsR.back().Dn > 0)
+		fractionIsStoppedR = true;
+}
+
+int Fracture::getNumOfElementsL() const {
+	return elementsL.size();
+}
+
+int Fracture::getNumOfElementsR() const {
+	return elementsR.size();
 }
 
 void Fracture::getPointsForPlot(double* x, double* y) const {
-	x[0] = lmntsL.back().Cx - lmntsL.back().getA() * cos(lmntsL.back().beta);
-	y[0] = lmntsL.back().Cy - lmntsL.back().getA() * sin(lmntsL.back().beta);
+	x[0] = elementsL.back().Cx - elementsL.back().getA() * cos(elementsL.back().beta);
+	y[0] = elementsL.back().Cy - elementsL.back().getA() * sin(elementsL.back().beta);
 
 	int i = 1;
-	for (auto lmnt = lmntsL.rbegin(); lmnt != lmntsL.rend(); lmnt++) {
-		x[i] = lmnt->Cx + lmnt->getA() * cos(lmnt->beta);
-		y[i] = lmnt->Cy + lmnt->getA() * sin(lmnt->beta);
+	for (auto element = elementsL.rbegin(); element != elementsL.rend(); element++) {
+		x[i] = element->Cx + element->getA() * cos(element->beta);
+		y[i] = element->Cy + element->getA() * sin(element->beta);
 		i++;
 	}
-	for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-		x[i] = lmnt->Cx + lmnt->getA() * cos(lmnt->beta);
-		y[i] = lmnt->Cy + lmnt->getA() * sin(lmnt->beta);
+	for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+		x[i] = element->Cx + element->getA() * cos(element->beta);
+		y[i] = element->Cy + element->getA() * sin(element->beta);
 		i++;
 	}
 }
 
 void Fracture::getPointsForDisplacementPlot(double* x, double* v) const {
 	int i = 0;
-	for (auto lmnt = lmntsL.rbegin(); lmnt != lmntsL.rend(); lmnt++) {
-		x[i] = lmnt->Cx;
-		v[i] = lmnt->Dn / 2;
+	for (auto element = elementsL.rbegin(); element != elementsL.rend(); element++) {
+		x[i] = element->Cx;
+		v[i] = element->Dn / 2;
 		i++;
 	}
-	for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-		x[i] = lmnt->Cx;
-		v[i] = lmnt->Dn / 2;
+	for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+		x[i] = element->Cx;
+		v[i] = element->Dn / 2;
 		i++;
 	}
 }
 
-double Fracture::getHalfLengthL() const {
-	return halfLengthL;
+double Fracture::getLeftLength() const {
+	return leftLength;
 }
 
-double Fracture::getHalfLengthR() const {
-	return halfLengthR;
+double Fracture::getRightLength() const {
+	return rightLength;
 }

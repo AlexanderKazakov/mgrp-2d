@@ -36,7 +36,7 @@ public:
      * @param y initial position of fracture
      * @param beta initial angle of fracture to x-axis
      * @param h_length half-length of boundary elements of fracture
-     * @param numOfLmnts required number of boundary elements at the end of
+     * @param numOfElements required number of boundary elements at the end of
 	 * computation
      * @param a pressure parameter
      * @param b pressure parameter
@@ -48,8 +48,8 @@ public:
 	 * calculation and calculation of direction of the fracture's growth,
 	 * "predictor" or "predictor-corrector"
      */
-	void addFracture(int number, int numOfLmnts, 
-                     double x, double y, double beta, double halfLengthOfLmnts,
+	void addFracture(int number, int numOfElements, 
+                     double x, double y, double beta, double halfLengthOfElements,
                      double a, double b, double c, 
                      std::string pressureType, std::string tip, 
                      std::string rotation);
@@ -81,6 +81,13 @@ public:
      */
 	void setRanges(const double &_Xmin, const double &_Xmax, 
 	               const double &_Ymin, const double &_Ymax);
+	/**
+	 * Set sequence of the calculation of fractures
+     * @param _sequence "series" - one by one without feedback from next 
+	 * to previous, "parallel" - all together, "series with feedback" - 
+	 * one by one with feedback from next to previous
+	 */
+	void setSequence(const std::string _sequence);
 	/**
 	 * Reserve enough memory for numberOfFractures fractures.
 	 * It's very important for correct work of the program!
@@ -122,6 +129,23 @@ private:
 	std::vector<Fracture>::iterator currentFracture;
 	// for visualization purpose, in test2.py
 	Breaker breakerOfFirstFracture;
+	// rule on the sequence of calculation of several fractures,
+	// "series", "parallel" or "series with feedback"
+	std::string sequence;
+	/**
+	 * Calculate all the fractures those grow together at the same time
+     */
+	void parallelCalculate();
+	/**
+	 * Fill in the system of linear equations on displacement 
+	 * discontinuities of elements (for all fractures together),
+	 * solve it by GSL library and set new values
+	 * of displacement discontinuity to elements.
+	 * 
+	 * It's the main idea of the program. It uses displacement discontinuity 
+	 * boundary method proposed by Crouch.
+     */
+	void parallelCalculateElements();
 	/**
 	 * Draw actual fractures
      * @param gr graph to draw on

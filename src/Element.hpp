@@ -60,14 +60,14 @@ public:
 	void setExternalImpact(const Field &field);
 	/**
 	 * Calculate the components of the matrix of linear system on displacement 
-	 * discontinuities corresponding to impact of this element on element lmnt2
-     * @param lmnt2 element to calculate impact on
-     * @param Ass impact of this->Ds on lmnt2.Ds
-     * @param Asn impact of this->Ds on lmnt2.Dn
-     * @param Ans impact of this->Dn on lmnt2.Ds
-     * @param Ann impact of this->Dn on lmnt2.Dn
+	 * discontinuities corresponding to impact of this element on element element2
+     * @param element2 element to calculate impact on
+     * @param Ass impact of this->Ds on element2.Ds
+     * @param Asn impact of this->Ds on element2.Dn
+     * @param Ans impact of this->Dn on element2.Ds
+     * @param Ann impact of this->Dn on element2.Dn
      */
-	void calculateImpactOn(const Element &lmnt2, double &Ass, double &Asn,
+	void calculateImpactOn(const Element &element2, double &Ass, double &Asn,
 	                                             double &Ans, double &Ann) const;
 	/**
 	 * Calculate impact of this element on field in the point (x_glob, y_glob)

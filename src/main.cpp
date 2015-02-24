@@ -38,8 +38,10 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
 
 	TiXmlElement *xml_system = xml_task->FirstChildElement("system");
+	std::string sequence = xml_system->Attribute("sequence_of_calculation");
 	std::string tip = xml_system->Attribute("tip");
 	std::string rotation = xml_system->Attribute("rotation");
+	stratum.setSequence(sequence);
 
 	TiXmlElement *xml_stratum = xml_task->FirstChildElement("stratum");
 	TiXmlElement *xml_elastic_modules = xml_stratum->FirstChildElement("elastic_modules");
@@ -78,8 +80,8 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
 
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
-		int numOfLmnts = atoi(elements->Attribute("number_of_elements")) + 4;
-		double halfLengthOfLmnts = atof(elements->Attribute("half-length"));
+		int numOfElements = atoi(elements->Attribute("number_of_elements")) + 4;
+		double halfLengthOfElements = atof(elements->Attribute("half-length"));
 
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
 		double a = atof(xml_pressure->Attribute("a"));
@@ -87,7 +89,7 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
 
-		stratum.addFracture(number, numOfLmnts, x, y, beta, halfLengthOfLmnts,
+		stratum.addFracture(number, numOfElements, x, y, beta, halfLengthOfElements,
 				a, b, c, pressureType, tip, rotation);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 

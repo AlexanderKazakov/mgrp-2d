@@ -34,14 +34,14 @@ void Element::setExternalImpact(const Field &field) {
 	externalSigmaS = field.inRotatedAxis(beta).Sxy;
 }
 
-void Element::calculateImpactOn(const Element& lmnt2,
+void Element::calculateImpactOn(const Element& element2,
                                 double& Ass, double& Asn,
                                 double& Ans, double& Ann) const {
-	double gamma = lmnt2.beta - beta;
-	// x and y are coordinates of lmnt2 in the system 
+	double gamma = element2.beta - beta;
+	// x and y are coordinates of element2 in the system 
 	// of coordinates of this element.
-	double x = (lmnt2.Cx - Cx) * cos(beta) + (lmnt2.Cy - Cy) * sin(beta);
-	double y = - (lmnt2.Cx - Cx) * sin(beta) + (lmnt2.Cy - Cy) * cos(beta);
+	double x = (element2.Cx - Cx) * cos(beta) + (element2.Cy - Cy) * sin(beta);
+	double y = - (element2.Cx - Cx) * sin(beta) + (element2.Cy - Cy) * cos(beta);
 	
 	Ass = 2 * G * ( - sin(2 * gamma) * F4(x, y) 
 	                - cos(2 * gamma) * F5(x, y) 

@@ -18,46 +18,46 @@ void Breaker::getType(double& _a, double& _b, double& _c,
 	_pressureType = pressureType;
 }
 
-void Breaker::calculatePressure(std::vector<Element> &lmntsL, 
-                                std::vector<Element> &lmntsR) const {
+void Breaker::calculatePressure(std::vector<Element> &elementsL, 
+                                std::vector<Element> &elementsR) const {
 	
 	if ( pressureType == "const" ) {
-		for (auto lmnt = lmntsL.begin(); lmnt != lmntsL.end(); lmnt++) {
-			lmnt->setSigmaN(c);
+		for (auto element = elementsL.begin(); element != elementsL.end(); element++) {
+			element->setSigmaN(c);
 		}
-		for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-			lmnt->setSigmaN(c);
+		for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+			element->setSigmaN(c);
 		}
 	} else if ( pressureType == "lag" ) {
 		int i = 1;
-		for (auto lmnt = lmntsL.begin(); lmnt != lmntsL.end(); lmnt++) {
-			double t = (i * 1.0) / lmntsL.size();
+		for (auto element = elementsL.begin(); element != elementsL.end(); element++) {
+			double t = (i * 1.0) / elementsL.size();
 			if (fabs(t) > a)
-				lmnt->setSigmaN(0);
+				element->setSigmaN(0);
 			else
-				lmnt->setSigmaN(c);
+				element->setSigmaN(c);
 			i++;
 		}
 		i = 1;
-		for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-			double t = (i * 1.0) / lmntsR.size();
+		for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+			double t = (i * 1.0) / elementsR.size();
 			if (fabs(t) > a)
-				lmnt->setSigmaN(0);
+				element->setSigmaN(0);
 			else
-				lmnt->setSigmaN(c);
+				element->setSigmaN(c);
 			i++;
 		}
 	} else if ( pressureType == "polynomial" ) {
 		int i = 1;
-		for (auto lmnt = lmntsL.begin(); lmnt != lmntsL.end(); lmnt++) {
-			double t = (i * 1.0) / lmntsL.size();
-			lmnt->setSigmaN(a*t*t + b*t + c);
+		for (auto element = elementsL.begin(); element != elementsL.end(); element++) {
+			double t = (i * 1.0) / elementsL.size();
+			element->setSigmaN(a*t*t + b*t + c);
 			i++;
 		}
 		i = 1;
-		for (auto lmnt = lmntsR.begin(); lmnt != lmntsR.end(); lmnt++) {
-			double t = (i * 1.0) / lmntsR.size();
-			lmnt->setSigmaN(a*t*t + b*t + c);
+		for (auto element = elementsR.begin(); element != elementsR.end(); element++) {
+			double t = (i * 1.0) / elementsR.size();
+			element->setSigmaN(a*t*t + b*t + c);
 			i++;
 		}
 	}

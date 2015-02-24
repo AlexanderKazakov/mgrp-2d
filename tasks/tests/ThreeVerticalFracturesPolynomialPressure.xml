@@ -1,5 +1,6 @@
 <task>
-	<system tip="const" rotation="predictor-corrector" />
+	<system sequence_of_calculation="series" tip="const"
+		rotation="predictor-corrector"/>
 	<ranges Xmin="-2" Xmax="50" Ymin="-13" Ymax="13" />
 	<stratum> 
 		<elastic_modules G="15" nu="0.2"/> 
