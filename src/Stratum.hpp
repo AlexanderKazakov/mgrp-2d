@@ -45,7 +45,7 @@ public:
      * @param tip rule to use special boundary element at the tip of the
 	 * fracture, "const" or TODO
      */
-	void addFracture(int number, int numOfElements, 
+	void addFracture(int number, double volume, 
                      double x, double y, double beta, double halfLengthOfElements,
                      double a, double b, double c, 
                      std::string pressureType, std::string tip);
@@ -143,7 +143,7 @@ private:
 	 * Calculate the fractures from beginFracture to endFracture 
 	 * those grow together at the same time
      */
-	void calculate();
+	void calculateStage();
 	/**
 	 * Fill in the system of linear equations on displacement 
 	 * discontinuities of elements (for all fractures 

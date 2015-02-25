@@ -4,10 +4,10 @@
 Fracture::Fracture() {
 }
 
-Fracture::Fracture(Stratum *stratum, int number, int numOfElements,
+Fracture::Fracture(Stratum *stratum, int number, double volume,
                    double halfLengthOfElements, double _a, double _b, double _c,
                    std::string pressureType, std::string tip):
-                   stratum(stratum), number(number), numOfElements(numOfElements),
+                   stratum(stratum), number(number), taskVolume(volume),
                    a(halfLengthOfElements), tip(tip) {
 	fractionIsStoppedL = false;
 	fractionIsStoppedR = false;
@@ -21,8 +21,8 @@ Fracture::~Fracture() {
 }
 
 void Fracture::allocateElements(double x, double y, double beta) {
-	elementsL.reserve(numOfElements / 2);
-	elementsR.reserve(numOfElements / 2);
+	elementsL.reserve((int) (5 * volume / a));
+	elementsR.reserve((int) (5 * volume / a));
 	
 	// Add three small tip elements to the corners
 	elementsR.push_back(Element(5 * a / 9, x + 5 * a / 9 * cos(beta), 
@@ -42,7 +42,8 @@ void Fracture::allocateElements(double x, double y, double beta) {
 }
 
 bool Fracture::isCompleted() const {
-	return ((elementsL.size() + elementsR.size()) >= numOfElements) ||
+	print("volume = ", volume);
+	return (volume > taskVolume) ||
 	       (fractionIsStoppedL && fractionIsStoppedR);
 }
 
@@ -61,13 +62,13 @@ void Fracture::grow() {
 	double deltaBeta1 = calcAngleOfRotation(elementsL.back());
 	double deltaBeta2 = calcAngleOfRotation(elementsR.back());
 	deltaBetaL = deltaBeta1; deltaBetaR = deltaBeta2;
-	grow(deltaBeta1, deltaBeta2);
+	if ( ! isCompleted() ) grow(deltaBeta1, deltaBeta2);
 }
 
 void Fracture::correctRotation() {
 	double deltaBeta1 = (calcAngleOfRotation(elementsL.back()) + deltaBetaL) / 2;
 	double deltaBeta2 = (calcAngleOfRotation(elementsR.back()) + deltaBetaR) / 2;
-	replaceTipElements(deltaBeta1, deltaBeta2);
+	if ( ! isCompleted() ) replaceTipElements(deltaBeta1, deltaBeta2);
 }
 
 void Fracture::setExternalImpactAndBreakerPressure() {
@@ -145,14 +146,17 @@ void Fracture::fillInVectorB(gsl_vector* b, int i) const {
 }
 
 void Fracture::takeDDfromVectorX(const gsl_vector* x, int i) {
+	volume = 0;
 	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
 		element1->Ds = gsl_vector_get(x, i);
 		element1->Dn = gsl_vector_get(x, i + 1);
+		volume += - element1->Dn * 2 * element1->getA();
 		i += 2;
 	}
 	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
 		element1->Ds = gsl_vector_get(x, i);
 		element1->Dn = gsl_vector_get(x, i + 1);
+		volume += - element1->Dn * 2 * element1->getA();
 		i += 2;
 	}
 	if (elementsL.back().Dn > 0)
@@ -165,12 +169,8 @@ int Fracture::getNumber() const {
 	return number;
 }
 
-int Fracture::getNumOfElementsL() const {
-	return elementsL.size();
-}
-
-int Fracture::getNumOfElementsR() const {
-	return elementsR.size();
+int Fracture::getNumOfElements() const {
+	return elementsL.size() + elementsR.size();
 }
 
 void Fracture::getPointsForPlot(double* x, double* y) const {

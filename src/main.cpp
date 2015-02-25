@@ -74,14 +74,14 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	xml_fracture = xml_fractures->FirstChildElement("fracture");
 	while (xml_fracture != NULL) {
 		int number = atoi(xml_fracture->Attribute("number"));
-
+		double volume = atof(xml_fracture->Attribute("volume"));
+		
 		TiXmlElement *initial = xml_fracture->FirstChildElement("initial");
 		double x = atof(initial->Attribute("x"));
 		double y = atof(initial->Attribute("y"));
 		double beta = M_PI * atof(initial->Attribute("angle")) / 180;
 
 		TiXmlElement *elements = xml_fracture->FirstChildElement("elements");
-		int numOfElements = atoi(elements->Attribute("number_of_elements")) + 4;
 		double halfLengthOfElements = atof(elements->Attribute("half-length"));
 
 		TiXmlElement *xml_pressure = xml_fracture->FirstChildElement("pressure");
@@ -90,10 +90,9 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
 
-		stratum.addFracture(number, numOfElements, x, y, beta, halfLengthOfElements,
+		stratum.addFracture(number, volume, x, y, beta, halfLengthOfElements,
 				a, b, c, pressureType, tip);
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
-
 	}
 	info("Task from", taskfile, "is loaded");
 }

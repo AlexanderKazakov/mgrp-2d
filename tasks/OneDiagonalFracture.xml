@@ -7,9 +7,9 @@
 		<external_stresses Sxx="0" Sxy="0" Syy="0"/>
 	</stratum>
 	<fractures>
-		<fracture number="0">
+		<fracture number="0" volume="5">
 			<initial x="0" y="0" angle="45"/>
-			<elements half-length="0.1" number_of_elements="100"/>
+			<elements half-length="0.1"/>
 			<pressure type="const" a="0" b="0" c="-1"/>
 		</fracture>
 	</fractures>

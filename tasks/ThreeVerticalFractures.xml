@@ -1,25 +1,25 @@
 <task>
 	<system sequence_of_calculation="series" tip="const"
 		rotation="predictor-corrector"/>
-	<ranges Xmin="-2" Xmax="14" Ymin="-13" Ymax="13" />
-	<stratum> 
+	<ranges Xmin="-5" Xmax="20" Ymin="-20" Ymax="20" />
+	<stratum>
 		<elastic_modules G="15" nu="0.2"/> 
-		<external_stresses Sxx="10" Sxy="0" Syy="5"/>
+		<external_stresses Sxx="1" Sxy="0" Syy="0"/>
 	</stratum>
 	<fractures>
-		<fracture number="0">
+		<fracture number="0" volume="10">
 			<initial x="0" y="0" angle="90"/>
-			<elements half-length="0.5" number_of_elements="20"/>
+			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>
-		<fracture number="1">
+		<fracture number="1" volume="10">
 			<initial x="5" y="0" angle="90"/>
-			<elements half-length="0.5" number_of_elements="20"/>
+			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>
-		<fracture number="2">
+		<fracture number="2" volume="10">
 			<initial x="10" y="0" angle="90"/>
-			<elements half-length="0.5" number_of_elements="20"/>
+			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>
 	</fractures>

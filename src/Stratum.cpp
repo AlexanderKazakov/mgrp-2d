@@ -7,13 +7,13 @@ Stratum::Stratum() {
 Stratum::~Stratum() {
 }
 
-void Stratum::addFracture(int number, int numOfElements, 
+void Stratum::addFracture(int number, double volume, 
                           double x, double y, double beta, 
                           double halfLengthOfElements,
                           double a, double b, double c,
                           std::string pressureType, std::string tip) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
-	fractures.push_back( Fracture(this, number, numOfElements,
+	fractures.push_back( Fracture(this, number, volume,
 			                      halfLengthOfElements, a, b, c, 
 			                      pressureType, tip) );
 	fractures.back().allocateElements(x, y, beta);
@@ -56,13 +56,13 @@ void Stratum::reserve(const int numberOfFractures) {
 }
 
 void Stratum::calculateTask() {
-	info("Starting calculation ...");
+	info("Starting calculation of the task ...");
 	
 	if (sequence == "series") {
 		beginFracture = fractures.begin();
 		endFracture = fractures.begin() + 1;
 		while (beginFracture != fractures.end()) {
-			calculate();
+			calculateStage();
 			beginFracture++;
 			if (endFracture != fractures.end()) endFracture++;
 		}
@@ -70,15 +70,20 @@ void Stratum::calculateTask() {
 	} else if (sequence == "parallel") {
 		beginFracture = fractures.begin();
 		endFracture = fractures.end();
-		calculate();
+		calculateStage();
 		beginFracture = fractures.end();
 		
 	} else if (sequence == "series with feedback") {
 		beginFracture = fractures.begin();
-		// TODO
+		endFracture = fractures.begin();
+		do {
+			endFracture++;
+			calculateStage();
+		} while (endFracture != fractures.end());
+		beginFracture = fractures.end();
 	}
 	
-	info("Calculation is done.");
+	info("Calculation of the task is done.");
 }
 
 Field Stratum::calculateImpactInPoint(const double& x, const double& y) const{
@@ -111,7 +116,7 @@ void Stratum::visualize() const{
 void Stratum::drawDisplacements() const {
 	info("Drawing displacements ...");
 	auto fracture = fractures.begin();
-	int N = fracture->getNumOfElementsL() + fracture->getNumOfElementsR();
+	int N = fracture->getNumOfElements();
 	double *_x = new double[N];
 	double *_v = new double[N];
 	// numerical results
@@ -172,10 +177,13 @@ void Stratum::drawDisplacements() const {
 	delete [] _v;
 }
 
-void Stratum::calculate() {
+void Stratum::calculateStage() {
+	info("Starting calculation of the next stage. Fractures from", 
+	     beginFracture->getNumber(), "to", 
+	     (endFracture - 1)->getNumber(), "...");
+	
 	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
 		frac1->setExternalImpactAndBreakerPressure();
-	
 	calculateElements();
 	bool calculationIsCompleted = true;
 	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
@@ -196,12 +204,13 @@ void Stratum::calculate() {
 		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
 			calculationIsCompleted *= frac1->isCompleted();
 	}
+	info("Calculation of stage is completed.");
 }
 
 void Stratum::calculateElements() {
 	int N = 0;
 	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
-		N += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
+		N += 2 * frac1->getNumOfElements();
 	}
 	gsl_matrix *A = gsl_matrix_alloc(N, N);
 	gsl_vector *b = gsl_vector_alloc(N);
@@ -212,13 +221,12 @@ void Stratum::calculateElements() {
 		int i2 = 0;
 		for(auto frac2 = beginFracture; frac2 != endFracture; frac2++) {
 			frac1->fillInMatrixA(*frac2, A, i1, i2);
-			i2 += 2 * (frac2->getNumOfElementsL() + frac2->getNumOfElementsR());
+			i2 += 2 * frac2->getNumOfElements();
 		}
 		frac1->fillInVectorB(b, i1);
-		i1 += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
+		i1 += 2 * frac1->getNumOfElements();
 	}
 	
-	// Solving the SLE by gsl-library
 	gsl_permutation *p = gsl_permutation_alloc(N);
 	int signum;		
 	gsl_linalg_LU_decomp(A, p, &signum);
@@ -227,7 +235,7 @@ void Stratum::calculateElements() {
 	int i = 0;
 	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
 		frac1->takeDDfromVectorX(x, i);
-		i += 2 * (frac1->getNumOfElementsL() + frac1->getNumOfElementsR());
+		i += 2 * frac1->getNumOfElements();
 	}
 	
 	gsl_matrix_free(A);
@@ -239,7 +247,7 @@ void Stratum::drawFractures(mglGraph& gr) const{
 	info("Drawing fractures ...");
 	auto fracture = fractures.begin();
 	while (fracture != fractures.end()) {
-		int N = fracture->getNumOfElementsL() + fracture->getNumOfElementsR() + 1;
+		int N = fracture->getNumOfElements() + 1;
 		double *_x = new double[N];
 		double *_y = new double[N];
 		fracture->getPointsForPlot(_x, _y);

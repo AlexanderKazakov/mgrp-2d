@@ -41,7 +41,7 @@ public:
      * @param tip rule to use special boundary element at the tip of the
 	 * fracture, "const" or TODO
      */
-	Fracture(Stratum *stratum, int number, int numOfElements,
+	Fracture(Stratum *stratum, int number, double volume,
 	         double halfLengthOfElements, double _a, double _b, double _c,
 	         std::string pressureType, std::string tip);
 	~Fracture();
@@ -52,7 +52,7 @@ public:
      */
 	void allocateElements(double x, double y, double beta);
 	/**
-     * @return true if required in task number of elements has been calculated
+     * @return true if required in task volume has been reached
 	 * or fracture is stopped on both corners
      */
 	bool isCompleted() const;
@@ -112,15 +112,10 @@ public:
      */
 	int getNumber() const;
 	/**
-	 * Get number of elements at the left part of the fracture
-     * @return number of elements at the left part of the fracture
+	 * Get number of elements in the fracture
+     * @return number of elements in the fracture
      */
-	int getNumOfElementsL() const;
-	/**
-	 * Get number of elements at the right part of the fracture
-     * @return number of elements at the right part of the fracture
-     */
-	int getNumOfElementsR() const;
+	int getNumOfElements() const;
 	/**
 	 * Get points for drawing the fracture on the graph
      * @param x
@@ -152,10 +147,13 @@ private:
 	// if the fraction is stopped by compression on the right edge
 	bool fractionIsStoppedR;
 	int number; // index number of fracture
-	// number of required elements at the end of computation
-	int numOfElements;
 	double G, nu; // rheology parameters of stratum
 	double a; // half-length of boundary elements
+	// area of the fracture (smth like length * displacementDiscontinuity)
+	double volume;
+	// area of the fracture (smth like length * displacementDiscontinuity),
+	// required in task
+	double taskVolume;
 	double leftLength; // length of the left part of the fracture
 	double rightLength; // length of the right part of the fracture
 	// change of the direction of fracture's propagation
@@ -234,7 +232,7 @@ private:
 
 namespace std {
 	inline std::ostream& operator<<(std::ostream &os, const Fracture &frac) {
-		os << "\t" << frac.getNumber()
+		os << frac.getNumber()
 				<< std::endl;
 		return os;
 	};
