@@ -5,7 +5,11 @@
 #include <vector>
 
 #include "Element.hpp"
+#include "Fracture.hpp"
 #include "util.hpp"
+
+
+class Fracture;
 
 
 /**
@@ -53,10 +57,15 @@ public:
      * @param elements pointer to the middle (!) of the elements of the fracture
      * @param numOfCalcElements actual number of elements in the fracture
      */
-	void calculatePressure(std::vector<Element> &elementsL, 
-	                       std::vector<Element> &elementsR) const;
+	void calculatePressure(Fracture *frac);
 private:
-	double a, b, c; // numerical pressure parameters
+	// indexes to mark points of fracture at which the injection of breaker
+	// was stopped
+	int leftN, rightN;
+	// End of Injection Multiplier. Used to take into account decrease in 
+	// pressure at the end of injection
+	const double eim = 1.0;
+	double a, b, c; // pressure parameters
 	std::string pressureType; // type of pressure distribution along the fracture
 };
 

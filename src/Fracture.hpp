@@ -14,6 +14,7 @@
 
 
 class Stratum;
+class Breaker;
 
 /**
  * Class that contains displacement discontinuity boundary elements (elements)
@@ -23,6 +24,9 @@ class Stratum;
 
 class Fracture {
 public:
+	// if "the breaker is injected to the fracture now", used by breaker 
+	// to set sigmaN to elements
+	bool breakerIsInjected;
 	Fracture();
 	/**
 	 * Constructor of the fracture.
@@ -57,6 +61,10 @@ public:
      */
 	bool isCompleted() const;
 	/**
+     * @return true if fracture is stopped on both corners
+     */
+	bool isStopped() const;
+	/**
 	 * Calculate field in point (x, y) caused by the fracture
      * @param x
      * @param y
@@ -70,7 +78,7 @@ public:
      */
 	void grow();
 	/**
-	 * Replace three small tip elements on both edges with new three small tip 
+	 * Replace three small tip elements on both corners with new three small tip 
 	 * elements with other angle from predictor-corrector method
      */
 	void correctRotation();
@@ -137,14 +145,18 @@ public:
      * @return length of the right part of the fracture
      */
 	double getRightLength() const;
+	/**
+     * @return pointer to its breaker
+     */
+	Breaker *getBreaker() const;
 	
 	// It's necessary for fast and easy setting the pressure of the inner 
 	// breaker on every step of calculation.
 	friend class Breaker;
 private:
-	// if the fraction is stopped by compression on the left edge
+	// if the fraction is stopped by compression on the left corner
 	bool fractionIsStoppedL;
-	// if the fraction is stopped by compression on the right edge
+	// if the fraction is stopped by compression on the right corner
 	bool fractionIsStoppedR;
 	int number; // index number of fracture
 	double G, nu; // rheology parameters of stratum
@@ -195,19 +207,19 @@ private:
 //	} fracIter;
 	
 	
-	Breaker breaker;	//	class of the inner breaker
+	Breaker *breaker;	//	pointer to the class of the inner breaker
 	Stratum *stratum;	//	pointer to the stratum which owns the fracture
 	
 	/**
-	 * Add new elements to the fracture. Three small tip elements in both edges 
+	 * Add new elements to the fracture. Three small tip elements in both corners 
 	 * are replaced by one ordinary element with equal length and angle. Next, 
-	 * new three small elements are added to the edges with new angle from parameters.
+	 * new three small elements are added to the corners with new angle from parameters.
      * @param deltaBeta1 rotation of the left tip element towards its neighbour
      * @param deltaBeta2 rotation of the right tip element towards its neighbour
      */
 	void grow(const double &deltaBeta1, const double &deltaBeta2);
 	/**
-	 * Add two elements to the edges of fracture.
+	 * Add two elements to the corners of fracture.
      * @param deltaBeta1 rotation of the first (left) element towards its neighbour
      * @param deltaBeta2 rotation of the last (right) element towards its neighbour
 	 * @param half_length half-length of the elements to add
@@ -215,7 +227,7 @@ private:
 	void addNewElements(const double &deltaBeta1, const double &deltaBeta2,
 	                                            const double &half_length);
 	/**
-	 * Replace three small tip elements on both edges with new three small tip 
+	 * Replace three small tip elements on both corners with new three small tip 
 	 * elements with other angle from parameters
      * @param deltaBeta1 rotation of the left tip element towards its neighbour
      * @param deltaBeta2 rotation of the right tip element towards its neighbour

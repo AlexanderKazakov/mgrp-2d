@@ -17,7 +17,6 @@ void Stratum::addFracture(int number, double volume,
 			                      halfLengthOfElements, a, b, c, 
 			                      pressureType, tip) );
 	fractures.back().allocateElements(x, y, beta);
-	breakerOfFirstFracture.setType(a, b, c, pressureType);
 }
 
 void Stratum::setRheology(const double &_G, const double &_nu) {
@@ -63,6 +62,7 @@ void Stratum::calculateTask() {
 		endFracture = fractures.begin() + 1;
 		while (beginFracture != fractures.end()) {
 			calculateStage();
+			beginFracture->breakerIsInjected = false;
 			beginFracture++;
 			if (endFracture != fractures.end()) endFracture++;
 		}
@@ -79,6 +79,7 @@ void Stratum::calculateTask() {
 		do {
 			endFracture++;
 			calculateStage();
+			(endFracture - 1)->breakerIsInjected = false;
 		} while (endFracture != fractures.end());
 		beginFracture = fractures.end();
 	}
@@ -138,7 +139,7 @@ void Stratum::drawDisplacements() const {
 	
 	std::string pressureType;
 	double _a, b, c;
-	breakerOfFirstFracture.getType(_a, b, c, pressureType);
+	fractures.begin()->getBreaker()->getType(_a, b, c, pressureType);
 	// analytical solution
 	if ( pressureType == "const" ) {
 		for (int i = 0; i < N; i++) {

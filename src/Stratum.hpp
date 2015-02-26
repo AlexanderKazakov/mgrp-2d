@@ -7,7 +7,6 @@
 
 #include "Fracture.hpp"
 #include "Field.hpp"
-#include "Breaker.hpp"
 #include "util.hpp"
 
 class Fracture;
@@ -131,8 +130,6 @@ private:
 	std::vector<Fracture>::iterator beginFracture;
 	// the iterator on the last fracture of those which are calculated currently
 	std::vector<Fracture>::iterator endFracture;
-	// for visualization purpose, in test2.py
-	Breaker breakerOfFirstFracture;
 	// rule on the sequence of calculation of several fractures,
 	// "series", "parallel" or "series with feedback"
 	std::string sequence;

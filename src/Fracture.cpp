@@ -11,10 +11,12 @@ Fracture::Fracture(Stratum *stratum, int number, double volume,
                    a(halfLengthOfElements), tip(tip) {
 	fractionIsStoppedL = false;
 	fractionIsStoppedR = false;
+	breakerIsInjected = true;
 	double _G, _nu;
 	stratum->getRheology(_G, _nu);
 	G = _G;	nu = _nu;
-	breaker.setType(_a, _b, _c, pressureType);
+	breaker = new Breaker;
+	breaker->setType(_a, _b, _c, pressureType);
 }
 
 Fracture::~Fracture() {
@@ -42,9 +44,11 @@ void Fracture::allocateElements(double x, double y, double beta) {
 }
 
 bool Fracture::isCompleted() const {
-	print("volume = ", volume);
-	return (volume > taskVolume) ||
-	       (fractionIsStoppedL && fractionIsStoppedR);
+	return (volume > taskVolume) || isStopped() || ( ! breakerIsInjected );
+}
+
+bool Fracture::isStopped() const {
+	return (fractionIsStoppedL && fractionIsStoppedR);
 }
 
 Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
@@ -62,13 +66,13 @@ void Fracture::grow() {
 	double deltaBeta1 = calcAngleOfRotation(elementsL.back());
 	double deltaBeta2 = calcAngleOfRotation(elementsR.back());
 	deltaBetaL = deltaBeta1; deltaBetaR = deltaBeta2;
-	if ( ! isCompleted() ) grow(deltaBeta1, deltaBeta2);
+	if ( ! isStopped() ) grow(deltaBeta1, deltaBeta2);
 }
 
 void Fracture::correctRotation() {
 	double deltaBeta1 = (calcAngleOfRotation(elementsL.back()) + deltaBetaL) / 2;
 	double deltaBeta2 = (calcAngleOfRotation(elementsR.back()) + deltaBetaR) / 2;
-	if ( ! isCompleted() ) replaceTipElements(deltaBeta1, deltaBeta2);
+	if ( ! isStopped() ) replaceTipElements(deltaBeta1, deltaBeta2);
 }
 
 void Fracture::setExternalImpactAndBreakerPressure() {
@@ -78,7 +82,7 @@ void Fracture::setExternalImpactAndBreakerPressure() {
 	for (auto element = elementsR.begin(); element != elementsR.end(); element++) 
 		element->setExternalImpact
 	                     (stratum->calculateImpactInPoint(element->Cx, element->Cy));
-	breaker.calculatePressure(elementsL, elementsR);
+	breaker->calculatePressure(this);
 }
 
 
@@ -146,23 +150,34 @@ void Fracture::fillInVectorB(gsl_vector* b, int i) const {
 }
 
 void Fracture::takeDDfromVectorX(const gsl_vector* x, int i) {
+	//print("takeDD from fracture", getNumber());
 	volume = 0;
 	for (auto element1 = elementsL.rbegin(); element1 != elementsL.rend(); element1++) {
 		element1->Ds = gsl_vector_get(x, i);
 		element1->Dn = gsl_vector_get(x, i + 1);
+		if (element1->Dn > 0)
+			element1->Dn = 0;
+		//print("Dn = ", element1->Dn, "sigmaN = ", element1->getBn());
 		volume += - element1->Dn * 2 * element1->getA();
 		i += 2;
 	}
 	for (auto element1 = elementsR.begin(); element1 != elementsR.end(); element1++) {
 		element1->Ds = gsl_vector_get(x, i);
 		element1->Dn = gsl_vector_get(x, i + 1);
+		if (element1->Dn > 0)
+			element1->Dn = 0;
+		//print("Dn = ", element1->Dn, "sigmaN = ", element1->getBn());
 		volume += - element1->Dn * 2 * element1->getA();
 		i += 2;
 	}
-	if (elementsL.back().Dn > 0)
+	if (elementsL.back().Dn == 0) {
 		fractionIsStoppedL = true;
-	if (elementsR.back().Dn > 0)
+		info("Fracture number", number, "is stopped at the left corner");
+	}
+	if (elementsR.back().Dn == 0) {
 		fractionIsStoppedR = true;
+		info("Fracture number", number, "is stopped at the right corner");
+	}
 }
 
 int Fracture::getNumber() const {
@@ -212,6 +227,10 @@ double Fracture::getRightLength() const {
 	return rightLength;
 }
 
+Breaker *Fracture::getBreaker() const {
+	return breaker;
+}
+
 double Fracture::calcAngleOfRotation(const Element &element1) const {
 	double K1 = - element1.Dn;
 	double K2 = - element1.Ds;
@@ -225,25 +244,36 @@ void Fracture::grow(const double &deltaBeta1, const double &deltaBeta2) {
 		double beta0 = elementsL.back().beta;
 		double x0 = elementsL.front().Cx + 5 * a / 9 * cos(beta0);
 		double y0 = elementsL.front().Cy + 5 * a / 9 * sin(beta0);
-		elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
-		elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
-		elementsL.push_back(Element(a, x0 - a * cos(beta0), 
-	                                y0 - a * sin(beta0), beta0, G, nu));
-		elementsL.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                     (elementsL.back().Cx, elementsL.back().Cy));
-		elementsR.push_back(Element(a, x0 + a * cos(beta0), 
-	                                y0 + a * sin(beta0), beta0, G, nu));
-		elementsR.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                     (elementsL.back().Cx, elementsL.back().Cy));
+		if ( ! fractionIsStoppedL ) {
+			elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+			elementsL.push_back(Element(a, x0 - a * cos(beta0), 
+	                                       y0 - a * sin(beta0), beta0, G, nu));
+			elementsL.back().setExternalImpact
+		                         (stratum->calculateImpactInPoint
+	                                  (elementsL.back().Cx, elementsL.back().Cy));
+		}
+		if ( ! fractionIsStoppedR ) {
+			elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+			elementsR.push_back(Element(a, x0 + a * cos(beta0), 
+	                                       y0 + a * sin(beta0), beta0, G, nu));
+			elementsR.back().setExternalImpact
+		                         (stratum->calculateImpactInPoint
+	                                  (elementsL.back().Cx, elementsL.back().Cy));
+		}
 		addNewElements(deltaBeta1, deltaBeta2, 5 * a / 9);
 		addNewElements(0, 0, a / 3);
 		addNewElements(0, 0, a / 9);
 	} else {
 		double beta1 = elementsL.back().beta;
 		double beta2 = elementsR.back().beta;
-		elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
-		elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
-		leftLength -= 2*a; rightLength -= 2*a;
+		if ( ! fractionIsStoppedL ) {
+			elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+			leftLength -= 2*a;
+		}
+		if ( ! fractionIsStoppedR ) {
+			elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+			rightLength -= 2*a;
+		}
 		double oldDeltaBeta1 = beta1 - elementsL.back().beta;
 		double oldDeltaBeta2 = beta2 - elementsR.back().beta;
 		
@@ -253,41 +283,55 @@ void Fracture::grow(const double &deltaBeta1, const double &deltaBeta2) {
 		addNewElements(0, 0, a / 9);
 	}
 	
-	breaker.calculatePressure(elementsL, elementsR);
+	breaker->calculatePressure(this);
 }
 
 void Fracture::addNewElements(const double& deltaBeta1, const double& deltaBeta2, 
                                                      const double& half_length) {
-	double beta1 = elementsL.back().beta + deltaBeta1;
-	double x1 = elementsL.back().Cx - elementsL.back().getA() * cos(elementsL.back().beta) 
-	                             - half_length * cos(beta1);
-	double y1 = elementsL.back().Cy - elementsL.back().getA() * sin(elementsL.back().beta)
-	                             - half_length * sin(beta1);
+	if ( ! fractionIsStoppedL ) {
+		double beta1 = elementsL.back().beta + deltaBeta1;
+		double x1 = elementsL.back().Cx 
+		          - elementsL.back().getA() * cos(elementsL.back().beta) 
+		          - half_length * cos(beta1);
+		double y1 = elementsL.back().Cy 
+		          - elementsL.back().getA() * sin(elementsL.back().beta)
+		          - half_length * sin(beta1);
 
-	elementsL.push_back(Element(half_length, x1, y1, beta1, G, nu));
-	elementsL.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                         (elementsL.back().Cx, elementsL.back().Cy));
+		elementsL.push_back(Element(half_length, x1, y1, beta1, G, nu));
+		elementsL.back().setExternalImpact
+		                     (stratum->calculateImpactInPoint
+		                          (elementsL.back().Cx, elementsL.back().Cy));
+		leftLength += 2 * half_length;
+	}
 
-	beta1 = elementsR.back().beta + deltaBeta2;
-	x1 = elementsR.back().Cx + elementsR.back().getA() * cos(elementsR.back().beta) 
-	                      + half_length * cos(beta1);
-	y1 = elementsR.back().Cy + elementsR.back().getA() * sin(elementsR.back().beta)
-	                      + half_length * sin(beta1);
+	if ( ! fractionIsStoppedR ) {
+		double beta1 = elementsR.back().beta + deltaBeta2;
+		double x1 = elementsR.back().Cx 
+		          + elementsR.back().getA() * cos(elementsR.back().beta) 
+		          + half_length * cos(beta1);
+		double y1 = elementsR.back().Cy 
+		          + elementsR.back().getA() * sin(elementsR.back().beta)
+		          + half_length * sin(beta1);
 
-	elementsR.push_back(Element(half_length, x1, y1, beta1, G, nu));
-	elementsR.back().setExternalImpact(stratum->calculateImpactInPoint
-	                                         (elementsR.back().Cx, elementsR.back().Cy));
-	
-	leftLength += 2 * half_length;
-	rightLength += 2 * half_length;
+		elementsR.push_back(Element(half_length, x1, y1, beta1, G, nu));
+		elementsR.back().setExternalImpact
+		                     (stratum->calculateImpactInPoint
+		                           (elementsR.back().Cx, elementsR.back().Cy));
+		rightLength += 2 * half_length;
+	}
 }
 
 void Fracture::replaceTipElements(const double& deltaBeta1, const double& deltaBeta2) {
-	elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
-	elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
-	leftLength -= 2*a; rightLength -= 2*a;
+	if ( ! fractionIsStoppedL ) {
+		elementsL.pop_back(); elementsL.pop_back(); elementsL.pop_back();
+		leftLength -= 2*a;
+	}
+	if ( ! fractionIsStoppedR ) {
+		elementsR.pop_back(); elementsR.pop_back(); elementsR.pop_back();
+		rightLength -= 2*a;
+	}
 	addNewElements(deltaBeta1, deltaBeta2, 5 * a / 9);
 	addNewElements(0, 0, a / 3);
 	addNewElements(0, 0, a / 9);
-	breaker.calculatePressure(elementsL, elementsR);
+	breaker->calculatePressure(this);
 }
