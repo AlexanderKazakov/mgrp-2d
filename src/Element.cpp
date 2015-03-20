@@ -1,16 +1,23 @@
 #include "Element.hpp"
 
+double Element::G;
+double Element::nu;
+double Element::sigmaS = 0;
+
 Element::Element() {
 }
 	
 Element::Element(double a, double Cx, double Cy, 
-                 double beta, double G, double nu):
+                 double beta):
                  a(a), Cx(Cx), Cy(Cy),
-                 beta(beta), G(G), nu(nu), 
-                 sigmaS(0) {
+                 beta(beta){
 }
 
 Element::~Element() {
+}
+
+void Element::setRheology(double _G, double _nu) {
+	G = _G;	nu = _nu;
 }
 
 double Element::getBs() const {
@@ -19,10 +26,6 @@ double Element::getBs() const {
 
 double Element::getBn() const {
 	return sigmaN - externalSigmaN;
-}
-
-double Element::getA() const {
-	return a;
 }
 
 void Element::setSigmaN(const double& _sigmaN) {
@@ -69,7 +72,8 @@ Field Element::calculateImpactInPoint(const double &x_glob,
 	
 	Field field;
 
-	field.Ux = Ds * (-(1 - 2 * nu) * sin(beta) * F2(x, y) + 
+// Uncomment this code if calculation of displacements become necessary
+/*	field.Ux = Ds * (-(1 - 2 * nu) * sin(beta) * F2(x, y) + 
 	                 2 * (1 - nu) * cos(beta) * F3(x, y) +
 	                 y * (sin(beta) * F4(x, y) - cos(beta) * F5(x, y)))
 	         + Dn * (-(1 - 2 * nu) * cos(beta) * F2(x, y) - 
@@ -81,7 +85,7 @@ Field Element::calculateImpactInPoint(const double &x_glob,
 	                 y * (cos(beta) * F4(x, y) + sin(beta) * F5(x, y)))
 	         + Dn * (-(1 - 2 * nu) * sin(beta) * F2(x, y) + 
 	                 2 * (1 - nu) * cos(beta) * F3(x, y) -
-	                 y * (sin(beta) * F4(x, y) - cos(beta) * F5(x, y)));
+	                 y * (sin(beta) * F4(x, y) - cos(beta) * F5(x, y))); */
 	
 	field.Sxx = 2 * G * Ds * ( 2 * cos(beta) * cos(beta) * F4(x, y) 
 	                           + sin(2 * beta) * F5(x, y) 
@@ -105,6 +109,12 @@ Field Element::calculateImpactInPoint(const double &x_glob,
 			                   - sin(2 * beta) * F7(x, y)));
 
 	return field;
+}
+
+double Element::calcAngleOfRotation() const {
+	double K1 = - Dn;
+	double K2 = - Ds;
+	return 2 * arctan(- 2 * K2, K1 + sqrt(K1 * K1 + 8 * K2 * K2) );
 }
 
 double Element::K1() const {

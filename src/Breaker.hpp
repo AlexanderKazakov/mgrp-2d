@@ -24,7 +24,6 @@ class Fracture;
 class Breaker {
 public:
 	Breaker();
-	~Breaker();
 	/**
 	 * Pressure of the inner breaker of the fracture is equal to
 	 * - (at^2 + bt + c), t from -1 to 1, if pressureType is "polynomial",
@@ -36,7 +35,8 @@ public:
      * @param _c
      * @param _pressureType
      */
-	void setType(double _a, double _b, double _c, std::string _pressureType);
+	Breaker(double _a, double _b, double _c, std::string _pressureType);
+	~Breaker();
 	/**
 	 * Get parameters from Breaker
 	 * Pressure of the inner breaker of the fracture is equal to
@@ -64,7 +64,7 @@ private:
 	int leftN, rightN;
 	// End of Injection Multiplier. Used to take into account decrease in 
 	// pressure at the end of injection
-	const double eim = 1.0;
+	static const double eim;
 	double a, b, c; // pressure parameters
 	std::string pressureType; // type of pressure distribution along the fracture
 };

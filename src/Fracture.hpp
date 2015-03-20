@@ -23,38 +23,54 @@ class Breaker;
  */
 
 class Fracture {
+private:
+	// if the fraction is stopped by compression on the left corner
+	bool fractionIsStoppedL;
+	// if the fraction is stopped by compression on the right corner
+	bool fractionIsStoppedR;
+	int number; // index number of fracture
+	double a; // half-length of boundary elements
+	// actual area of the fracture (smth like length * displacementDiscontinuity)
+	double volume;
+	// area of the fracture (smth like length * displacementDiscontinuity),
+	// required in task
+	double taskVolume;
+	double leftLength; // length of the left part of the fracture
+	double rightLength; // length of the right part of the fracture
+	// change of the direction of fracture's propagation
+	// on predictor step of predictor-corrector method, it's necessary
+	// on corrector step, so we keep it here
+	double deltaBetaL, deltaBetaR;
+	static std::string tip; // rule to use special boundary elements at the tip
+	
+	// displacement discontinuity boundary elements 
+	// at the left part of the fracture
+	std::vector<Element> elementsL;	
+	// displacement discontinuity boundary elements 
+	// at the right part of the fracture
+	std::vector<Element> elementsR;	
+	Breaker *breaker; // pointer to the class of the inner breaker
+	static Stratum *stratum; // pointer to the stratum which owns the fracture
 public:
-	// if "the breaker is injected to the fracture now", used by breaker 
+	// if the breaker is injecting to the fracture now, used by breaker 
 	// to set sigmaN to elements
-	bool breakerIsInjected;
+	bool breakerIsInjecting;
 	Fracture();
 	/**
 	 * Constructor of the fracture.
-	 * Pressure of the inner breaker of the fracture is equal to
-	 * - (at^2 + bt + c), t from -1 to 1, if pressureType is polynomial,
-	 * and ( -c ), if pressureType is const
-     * @param stratum pointer to the stratum which owns the fracture
      * @param number index number of fracture
+     * @param volume required in task volume of the fracture at the end of injection 
      * @param halfLengthOfElements half-length of boundary elements of fracture
-     * @param numOfElements required number of boundary elements at the 
-	 * end of computation
-     * @param _a pressure parameter
-     * @param _b pressure parameter
-     * @param _c pressure parameter 
-     * @param pressureType type of pressure of the inner breaker
-     * @param tip rule to use special boundary element at the tip of the
-	 * fracture, "const" or TODO
      */
-	Fracture(Stratum *stratum, int number, double volume,
-	         double halfLengthOfElements, double _a, double _b, double _c,
-	         std::string pressureType, std::string tip);
+	Fracture(int number, double volume, double halfLengthOfElements);
 	~Fracture();
 	/**
      * @param x x-coord of the initial element
      * @param y y-coord of the initial element
      * @param beta angle to x of the initial element
+	 * @param _breaker Breaker with parameters to set for breaker of this fracture 
      */
-	void allocateElements(double x, double y, double beta);
+	void allocateElements(double x, double y, double beta, Breaker _breaker);
 	/**
      * @return true if required in task volume has been reached
 	 * or fracture is stopped on both corners
@@ -149,67 +165,22 @@ public:
      * @return pointer to its breaker
      */
 	Breaker *getBreaker() const;
+	/**
+	 * Set static parameter - pointer to stratum that contains all fractures
+     * @param _stratum
+     */
+	void setStratum(Stratum *_stratum);
+	/**
+	 * Set static parameters - rule to use special boundary element at the corners
+     * @param _tip
+     */
+	void setTip(std::string _tip);
 	
 	// It's necessary for fast and easy setting the pressure of the inner 
 	// breaker on every step of calculation.
 	friend class Breaker;
+
 private:
-	// if the fraction is stopped by compression on the left corner
-	bool fractionIsStoppedL;
-	// if the fraction is stopped by compression on the right corner
-	bool fractionIsStoppedR;
-	int number; // index number of fracture
-	double G, nu; // rheology parameters of stratum
-	double a; // half-length of boundary elements
-	// area of the fracture (smth like length * displacementDiscontinuity)
-	double volume;
-	// area of the fracture (smth like length * displacementDiscontinuity),
-	// required in task
-	double taskVolume;
-	double leftLength; // length of the left part of the fracture
-	double rightLength; // length of the right part of the fracture
-	// change of the direction of fracture's propagation
-	// on predictor step of predictor-corrector method, it's necessary
-	// on corrector step, so we keep it here
-	double deltaBetaL, deltaBetaR;
-	std::string tip; // rule to use special boundary element at the tip
-	
-	// displacement discontinuity boundary elements 
-	// at the left part of the fracture
-	std::vector<Element> elementsL;	
-	// displacement discontinuity boundary elements 
-	// at the right part of the fracture
-	std::vector<Element> elementsR;	
-	
-//	// class to iterate all the elements of the fracture by one cycle
-//	class FracIter {
-//	private:
-//		//std::vector<Element> *elementsL;
-//		std::vector<Element>::reverse_iterator iterL;
-//		//std::vector<Element> *elementsR;
-//		std::vector<Element>::iterator iterR;
-//	public:
-//		FracIter(): iterL(elementsL.rbegin()), iterR(elementsR.begin()) {};
-//		void operator++() {
-//			if (iterL != elementsL.rend())
-//				iterL++;
-//			else
-//				iterR++;
-//		};						   
-//		
-//		Element *current() {
-//			if (iterL != elementsL.rend()) {
-//				return &(*iterL);
-//			}
-//			else
-//				return &(*iterR);
-//		}
-//	} fracIter;
-	
-	
-	Breaker *breaker;	//	pointer to the class of the inner breaker
-	Stratum *stratum;	//	pointer to the stratum which owns the fracture
-	
 	/**
 	 * Add new elements to the fracture. Three small tip elements in both corners 
 	 * are replaced by one ordinary element with equal length and angle. Next, 
@@ -233,13 +204,6 @@ private:
      * @param deltaBeta2 rotation of the right tip element towards its neighbour
      */
 	void replaceTipElements(const double &deltaBeta1, const double &deltaBeta2);
-	/**
-	 * Calculate the angle of rotation of the fracture propagation
-	 * near the given element 
-     * @param element1 element to calculate the rotation of propagation direction
-     * @return angle of rotation of propagation direction
-     */
-	double calcAngleOfRotation(const Element &element1) const;
 };
 
 namespace std {

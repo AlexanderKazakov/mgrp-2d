@@ -40,18 +40,12 @@ public:
      * @return maximal eigenvalue of stress tensor 
      */
 	double Smax() const;
-	/**
-	 * Calculate arctan of (a / b) taking into account the infinities
-     * @param a	numerator
-     * @param b	denominator
-     * @return arctan (a / b)
-     */
-	double arctan(const double &a, const double &b) const;
 	double Sxx;
 	double Syy;
 	double Sxy;
-	double Ux;
-	double Uy;
+// Uncomment this code if calculation of displacements become necessary
+/*	double Ux;
+	double Uy; */
 private:
 
 };

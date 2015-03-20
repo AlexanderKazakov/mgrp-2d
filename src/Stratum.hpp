@@ -7,9 +7,12 @@
 
 #include "Fracture.hpp"
 #include "Field.hpp"
+#include "Element.hpp"
+#include "Breaker.hpp"
 #include "util.hpp"
 
 class Fracture;
+class Breaker;
 
 /**
  * Class that contains all conditions and fractures and manipulates
@@ -20,46 +23,47 @@ class Fracture;
 
 
 class Stratum {
+private:
+	double G; // Shear modulus
+	double nu; // Poisson's ratio
+	double Xmin, Xmax, Ymin, Ymax; // Ranges for plot
+	// External stresses
+	double Sxx;
+	double Sxy; 
+	double Syy;
+	std::vector<Fracture> fractures; // all fractures
+	// the iterator on the first fracture of those which are calculated currently
+	std::vector<Fracture>::iterator beginFracture;
+	// the iterator on the last fracture of those which are calculated currently
+	std::vector<Fracture>::iterator endFracture;
+	// rule on the sequence of calculation of several fractures,
+	// "series", "parallel" or "series with feedback"
+	std::string sequence;
+	// rule to use splitting on actual configuration's calculation 
+	// and calculation of direction of the fracture's growth
+	std::string rotation;	
 public:
 	Stratum();
 	~Stratum();
 	/**
 	 * Add to the subsequent computation another fracture.
-	 * Pressure of the inner breaker of the fracture is equal to
-	 * - (at^2 + bt + c), t from -1 to 1, if pressureType is "polynomial",
-	 * ( -c ), if pressureType is "const"
-	 * ( -c ), t from -a to a, 0 elsewhere, 
-	 * if pressureType is "lag" (means in tips of the fracture pressure = 0) 
      * @param number index number of fracture
-     * @param x	initial position of fracture
+     * @param volume required in task volume of the fracture at the end of injection 
+     * @param x initial position of fracture
      * @param y initial position of fracture
      * @param beta initial angle of fracture to x-axis
-     * @param h_length half-length of boundary elements of fracture
-     * @param numOfElements required number of boundary elements at the end of
-	 * computation
-     * @param a pressure parameter
-     * @param b pressure parameter
-     * @param c pressure parameter
-     * @param pressureType type of pressure of the inner breaker
-     * @param tip rule to use special boundary element at the tip of the
-	 * fracture, "const" or TODO
+     * @param halfLengthOfElements half-length of boundary elements of fracture
+     * @param breaker Breaker with parameters to set for breaker of this fracture
      */
-	void addFracture(int number, double volume, 
-                     double x, double y, double beta, double halfLengthOfElements,
-                     double a, double b, double c, 
-                     std::string pressureType, std::string tip);
+	void addFracture(int number, double volume, double x, double y, 
+	                 double beta, double halfLengthOfElements,
+                     Breaker breaker);
 	/**
 	 * Set rheology parameters of stratum
      * @param _G shear modulus
      * @param _nu Poisson's ratio
      */
 	void setRheology(const double &_G, const double &_nu);
-	/**
-	 * Get rheology parameters from stratum
-     * @param _G shear modulus
-     * @param _nu Poisson's ratio
-     */
-	void getRheology(double &_G, double &_nu) const;
 	/**
 	 * Set external ( "at infinity" ) stresses
      * @param _Sxx
@@ -108,34 +112,8 @@ public:
      * @return Actual Field in (x, y)
      */
 	Field calculateImpactInPoint(const double &x, const double &y) const;
-	/**
-	 * Create enterprise graphics
-     */
-	void visualize() const; 
-	/**
-	 * Draw displacement discontinuities for one fracture for
-	 * testing purposes
-     */
-	void drawDisplacements() const;
+
 private:
-	double G; // Shear modulus
-	double nu; // Poisson's ratio
-	double Xmin, Xmax, Ymin, Ymax; // Ranges for plot
-	// External stresses
-	double Sxx;
-	double Sxy; 
-	double Syy;
-	std::vector<Fracture> fractures; // all fractures
-	// the iterator on the first fracture of those which are calculated currently
-	std::vector<Fracture>::iterator beginFracture;
-	// the iterator on the last fracture of those which are calculated currently
-	std::vector<Fracture>::iterator endFracture;
-	// rule on the sequence of calculation of several fractures,
-	// "series", "parallel" or "series with feedback"
-	std::string sequence;
-	// rule to use splitting on actual configuration's calculation 
-	// and calculation of direction of the fracture's growth
-	std::string rotation;
 	/**
 	 * Calculate the fractures from beginFracture to endFracture 
 	 * those grow together at the same time
@@ -153,20 +131,31 @@ private:
 	 * boundary method proposed by Crouch.
      */
 	void calculateElements();
+public:
+	/**
+	 * Create enterprise graphics
+	 */
+	void visualize() const;
+	/**
+	 * Draw displacement discontinuities for one fracture for
+	 * testing purposes
+	 */
+	void drawDisplacements() const;
+private:
 	/**
 	 * Draw actual fractures
-     * @param gr graph to draw on
-     */
+	 * @param gr graph to draw on
+	 */
 	void drawFractures(mglGraph &gr) const;
 	/**
 	 * Draw the actual field
-     * @param gr graph to draw on
-     */
+	 * @param gr graph to draw on
+	 */
 	void drawField(mglGraph &gr) const;
 	/**
 	 * Draw main stress' directions
-     * @param gr graph to draw on
-     */
+	 * @param gr graph to draw on
+	 */
 	void drawStressDirections(mglGraph &gr) const;
 };
 

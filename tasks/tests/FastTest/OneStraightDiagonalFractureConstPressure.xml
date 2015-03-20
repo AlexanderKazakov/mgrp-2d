@@ -1,5 +1,5 @@
 <task>
-	<system sequence_of_calculation="series" tip="const"
+	<system sequence_of_calculation="series with feedback" tip="const"
 		rotation="predictor"/>
 	<ranges Xmin="-5" Xmax="5" Ymin="-5" Ymax="5" />
 	<stratum> 
@@ -9,7 +9,7 @@
 	<fractures>
 		<fracture number="0" volume="0.3">
 			<initial x="0" y="0" angle="45"/>
-			<elements half-length="0.25"/>
+			<elements half-length="0.5"/>
 			<pressure type="const" a="0" b="0" c="-0.1"/>
 		</fracture>
 	</fractures>

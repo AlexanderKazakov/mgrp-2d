@@ -20,6 +20,7 @@ public:
 	double Cx; // Center on x
 	double Cy; // Center on y
 	double beta; //	Angle to x
+	double a; // Half-length
 	
 	Element();
 	/**
@@ -28,11 +29,15 @@ public:
      * @param Cx x-coord of the center of the element
      * @param Cy y-coord of the center of the element
      * @param beta angle to x-axis
+     */
+	Element(double a, double Cx, double Cy, double beta);
+	~Element();
+	/**
+	 * Set static members - rheology parameters
      * @param G shear modulus of stratum
      * @param nu Poisson's ratio of stratum
      */
-	Element(double a, double Cx, double Cy, double beta, double G, double nu);
-	~Element();
+	void setRheology(double _G, double _nu);
 	/**
 	 * Get the right-hand side corresponding to Ds of this element 
 	 * in the linear system on displacement discontinuities 
@@ -45,10 +50,6 @@ public:
      * @return right-hand side of SLE corresponding to Dn
      */
 	double getBn() const;
-	/**
-     * @return half-length of the element
-     */
-	double getA() const;
 	/**
      * @param _sigmaN value to set as sigmaN
      */
@@ -68,7 +69,7 @@ public:
      * @param Ann impact of this->Dn on element2.Dn
      */
 	void calculateImpactOn(const Element &element2, double &Ass, double &Asn,
-	                                             double &Ans, double &Ann) const;
+	                                                double &Ans, double &Ann) const;
 	/**
 	 * Calculate impact of this element on field in the point (x_glob, y_glob)
      * @param x_glob x-coord in global system of coordinates
@@ -77,6 +78,12 @@ public:
      */
 	Field calculateImpactInPoint(const double &x_glob, 
 	                             const double &y_glob) const;
+	/**
+	 * Calculate the angle of rotation of the fracture propagation
+	 * near the element 
+     * @return angle of rotation of the fracture to line along the element
+     */
+	double calcAngleOfRotation() const;
 	/**
      * @return Mode I stress intensity factor near the element
      */
@@ -87,10 +94,9 @@ public:
 	double K2() const;
 	
 private:
-	double G, nu; // Rheology parameters
-	double a; // Half-length
-	double sigmaN; // Impact of the inner breaker
-	double sigmaS; // Impact of the inner breaker
+	static double G, nu; // Rheology parameters
+	double sigmaN; // Pressure impact of the inner breaker 
+	static double sigmaS; // Shear impact of the inner breaker is zero
 	double externalSigmaN; // Impact of already existing fractures 
 	double externalSigmaS; // Impact of already existing fractures
 	

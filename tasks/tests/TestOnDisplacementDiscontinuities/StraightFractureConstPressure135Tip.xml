@@ -1,5 +1,5 @@
 <task>
-	<system sequence_of_calculation="series" tip="const"
+	<system sequence_of_calculation="series" tip="135"
 		rotation="predictor"/>
 	<ranges Xmin="-5" Xmax="5" Ymin="-5" Ymax="5" />
 	<stratum> 

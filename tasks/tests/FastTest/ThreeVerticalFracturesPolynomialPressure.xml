@@ -1,24 +1,24 @@
 <task>
-	<system sequence_of_calculation="series" tip="const"
-		rotation="predictor"/>
-	<ranges Xmin="-5" Xmax="15" Ymin="-15" Ymax="15" />
-	<stratum>
+	<system sequence_of_calculation="series with feedback" tip="135"
+		rotation="predictor-corrector"/>
+	<ranges Xmin="-10" Xmax="50" Ymin="-16" Ymax="16" />
+	<stratum> 
 		<elastic_modules G="15" nu="0.2"/> 
-		<external_stresses Sxx="1" Sxy="0" Syy="0"/>
+		<external_stresses Sxx="2" Sxy="0" Syy="2"/>
 	</stratum>
 	<fractures>
-		<fracture number="0" volume="10">
+		<fracture number="0" volume="1">
 			<initial x="0" y="0" angle="90"/>
 			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>
-		<fracture number="1" volume="10">
-			<initial x="5" y="0" angle="90"/>
+		<fracture number="1" volume="1">
+			<initial x="20" y="0" angle="90"/>
 			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>
-		<fracture number="2" volume="10">
-			<initial x="10" y="0" angle="90"/>
+		<fracture number="2" volume="1">
+			<initial x="45" y="0" angle="90"/>
 			<elements half-length="0.5"/>
 			<pressure type="polynomial" a="1" b="0" c="-1"/>
 		</fracture>

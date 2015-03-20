@@ -1,7 +1,9 @@
 #include "Field.hpp"
 
 Field::Field() {
-	Sxx = Sxy = Syy = Ux = Uy = 0;
+	Sxx = Sxy = Syy = 0;
+// Uncomment this code if calculation of displacements become necessary
+/*	Ux = Uy = 0; */
 }
 
 Field::~Field() {
@@ -11,14 +13,16 @@ void Field::operator+=(const Field &other) {
 	Sxx += other.Sxx;
 	Sxy += other.Sxy;
 	Syy += other.Syy;
-	Ux  += other.Ux;
-	Uy  += other.Uy;
+// Uncomment this code if calculation of displacements become necessary
+/*	Ux  += other.Ux;
+	Uy  += other.Uy; */
 }
 
 Field Field::inRotatedAxis(double beta) const {
 	Field rotated;
-	rotated.Ux  = Ux * cos (beta) + Uy * sin (beta);
-	rotated.Uy  = Uy * cos (beta) - Ux * sin (beta);
+// Uncomment this code if calculation of displacements become necessary
+/*	rotated.Ux  = Ux * cos (beta) + Uy * sin (beta);
+	rotated.Uy  = Uy * cos (beta) - Ux * sin (beta); */
 	rotated.Sxx = Sxx * cos(beta) * cos(beta) 
 	            + Sxy * sin (2 * beta) 
 	            + Syy * sin(beta) * sin(beta);
@@ -40,14 +44,4 @@ double Field::Trace() const {
 
 double Field::Smax() const {
 	return (Sxx + Syy + sqrt((Sxx - Syy) * (Sxx - Syy) + 4 * Sxy * Sxy)) / 2;
-}
-
-double Field::arctan(const double& a, const double& b) const {
-	double beta = atan(a / b);
-	if (b == 0) {
-		if (a > 0) beta = M_PI / 2;
-		if (a < 0) beta = - M_PI / 2;
-		if (a == 0) print("Error in atan: 0/0");
-	}
-	return beta;
 }

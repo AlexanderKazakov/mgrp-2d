@@ -1,7 +1,6 @@
 #include "Stratum.hpp"
 
 Stratum::Stratum() {
-	info("Stratum is created.");
 }
 
 Stratum::~Stratum() {
@@ -10,21 +9,16 @@ Stratum::~Stratum() {
 void Stratum::addFracture(int number, double volume, 
                           double x, double y, double beta, 
                           double halfLengthOfElements,
-                          double a, double b, double c,
-                          std::string pressureType, std::string tip) {
+                          Breaker breaker) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
-	fractures.push_back( Fracture(this, number, volume,
-			                      halfLengthOfElements, a, b, c, 
-			                      pressureType, tip) );
-	fractures.back().allocateElements(x, y, beta);
+	fractures.push_back( Fracture(number, volume, halfLengthOfElements) );
+	fractures.back().allocateElements(x, y, beta, breaker);
 }
 
 void Stratum::setRheology(const double &_G, const double &_nu) {
 	G = _G; nu = _nu;
-}
-
-void Stratum::getRheology(double &_G, double &_nu) const {
-	_G = G; _nu = nu;
+	Element tmp;
+	tmp.setRheology(G, nu);
 }
 
 void Stratum::setStresses(const double &_Sxx, const double &_Sxy, 
@@ -62,7 +56,7 @@ void Stratum::calculateTask() {
 		endFracture = fractures.begin() + 1;
 		while (beginFracture != fractures.end()) {
 			calculateStage();
-			beginFracture->breakerIsInjected = false;
+			beginFracture->breakerIsInjecting = false;
 			beginFracture++;
 			if (endFracture != fractures.end()) endFracture++;
 		}
@@ -79,7 +73,7 @@ void Stratum::calculateTask() {
 		do {
 			endFracture++;
 			calculateStage();
-			(endFracture - 1)->breakerIsInjected = false;
+			(endFracture - 1)->breakerIsInjecting = false;
 		} while (endFracture != fractures.end());
 		beginFracture = fractures.end();
 	}
@@ -99,6 +93,80 @@ Field Stratum::calculateImpactInPoint(const double& x, const double& y) const{
 	field.Syy += Syy;
 	return field;
 }
+
+void Stratum::calculateStage() {
+	info("Starting calculation of the next stage. Fractures from", 
+	     beginFracture->getNumber(), "to", 
+	     (endFracture - 1)->getNumber(), "...");
+	
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+		frac1->setExternalImpactAndBreakerPressure();
+	calculateElements();
+	bool calculationIsCompleted = true;
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+		calculationIsCompleted *= frac1->isCompleted();
+
+	while( ! calculationIsCompleted ) {
+		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+			frac1->grow();
+		if (rotation == "predictor-corrector") {
+			// Clarifying the direction of fracture's growth like it is
+			// usually done in "predictor-corrector" methods
+			calculateElements();
+			for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+				frac1->correctRotation();
+		}
+		calculateElements();
+		calculationIsCompleted = true;
+		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
+			calculationIsCompleted *= frac1->isCompleted();
+	}
+	info("Calculation of stage is complete.");
+}
+
+void Stratum::calculateElements() {
+	int N = 0;
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
+		N += 2 * frac1->getNumOfElements();
+	}
+	gsl_matrix *A = gsl_matrix_alloc(N, N);
+	gsl_vector *b = gsl_vector_alloc(N);
+	gsl_vector *x = gsl_vector_alloc(N);
+
+	int i1 = 0;
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
+		int i2 = 0;
+		for(auto frac2 = beginFracture; frac2 != endFracture; frac2++) {
+			frac1->fillInMatrixA(*frac2, A, i1, i2);
+			i2 += 2 * frac2->getNumOfElements();
+		}
+		frac1->fillInVectorB(b, i1);
+		i1 += 2 * frac1->getNumOfElements();
+	}
+	
+	// to save original of A after LU-decomposition
+	gsl_matrix *LU = gsl_matrix_alloc(N, N);
+	gsl_matrix_memcpy(LU, A);	
+	gsl_permutation *p = gsl_permutation_alloc(N);
+	int signum;		
+	gsl_linalg_LU_decomp(LU, p, &signum);
+	gsl_linalg_LU_solve(LU, p, b, x);
+	gsl_permutation_free(p);
+	gsl_matrix_free(LU);
+	
+	checkSLE(A, x, b, N);
+		
+	int i = 0;
+	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
+		frac1->takeDDfromVectorX(x, i);
+		i += 2 * frac1->getNumOfElements();
+	}
+	
+	gsl_matrix_free(A);
+	gsl_vector_free(x);
+	gsl_vector_free(b);
+}
+
 
 void Stratum::visualize() const{
 	info("Starting visualisation ...");
@@ -176,72 +244,6 @@ void Stratum::drawDisplacements() const {
 	gr.WriteFrame("displacements.png");
 	delete [] _x;
 	delete [] _v;
-}
-
-void Stratum::calculateStage() {
-	info("Starting calculation of the next stage. Fractures from", 
-	     beginFracture->getNumber(), "to", 
-	     (endFracture - 1)->getNumber(), "...");
-	
-	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
-		frac1->setExternalImpactAndBreakerPressure();
-	calculateElements();
-	bool calculationIsCompleted = true;
-	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
-		calculationIsCompleted *= frac1->isCompleted();
-
-	while( ! calculationIsCompleted ) {
-		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
-			frac1->grow();
-		if (rotation == "predictor-corrector") {
-			// Clarifying the direction of fracture's growth like it is
-			// usually done in "predictor-corrector" methods
-			calculateElements();
-			for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
-				frac1->correctRotation();
-		}
-		calculateElements();
-		calculationIsCompleted = true;
-		for(auto frac1 = beginFracture; frac1 != endFracture; frac1++)
-			calculationIsCompleted *= frac1->isCompleted();
-	}
-	info("Calculation of stage is completed.");
-}
-
-void Stratum::calculateElements() {
-	int N = 0;
-	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
-		N += 2 * frac1->getNumOfElements();
-	}
-	gsl_matrix *A = gsl_matrix_alloc(N, N);
-	gsl_vector *b = gsl_vector_alloc(N);
-	gsl_vector *x = gsl_vector_alloc(N);
-
-	int i1 = 0;
-	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
-		int i2 = 0;
-		for(auto frac2 = beginFracture; frac2 != endFracture; frac2++) {
-			frac1->fillInMatrixA(*frac2, A, i1, i2);
-			i2 += 2 * frac2->getNumOfElements();
-		}
-		frac1->fillInVectorB(b, i1);
-		i1 += 2 * frac1->getNumOfElements();
-	}
-	
-	gsl_permutation *p = gsl_permutation_alloc(N);
-	int signum;		
-	gsl_linalg_LU_decomp(A, p, &signum);
-	gsl_linalg_LU_solve(A, p, b, x);
-	
-	int i = 0;
-	for(auto frac1 = beginFracture; frac1 != endFracture; frac1++) {
-		frac1->takeDDfromVectorX(x, i);
-		i += 2 * frac1->getNumOfElements();
-	}
-	
-	gsl_matrix_free(A);
-	gsl_vector_free(x);
-	gsl_vector_free(b);
 }
 
 void Stratum::drawFractures(mglGraph& gr) const{

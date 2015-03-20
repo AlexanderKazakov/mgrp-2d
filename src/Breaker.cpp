@@ -1,17 +1,18 @@
 #include "Breaker.hpp"
 #include "Fracture.hpp"
 
+const double Breaker::eim = 1.0;
+
 Breaker::Breaker() {
+}
+
+Breaker::Breaker(double _a, double _b, double _c, std::string _pressureType) {
+	a = _a; b = _b; c = _c;
+	pressureType = _pressureType;
 	leftN = rightN = 0;
 }
 
 Breaker::~Breaker() {
-}
-
-void Breaker::setType(double _a, double _b, double _c, 
-                      std::string _pressureType) {
-	a = _a; b = _b; c = _c;
-	pressureType = _pressureType;
 }
 
 void Breaker::getType(double& _a, double& _b, double& _c, 
@@ -21,7 +22,7 @@ void Breaker::getType(double& _a, double& _b, double& _c,
 }
 
 void Breaker::calculatePressure(Fracture *frac) {
-	if (frac->breakerIsInjected) {
+	if (frac->breakerIsInjecting) {
 		
 		if ( pressureType == "const" ) {
 			for (auto element = frac->elementsL.begin(); 
@@ -132,4 +133,10 @@ void Breaker::calculatePressure(Fracture *frac) {
 		}
 		
 	}
+	// Special for polynomial pressure fractures at initial state
+	// (for the pressure not to be zero in the fracture)
+	if (frac->elementsL.size() == 1) 
+		frac->elementsL.begin()->setSigmaN(c);
+	if (frac->elementsR.size() == 1) 
+		frac->elementsR.begin()->setSigmaN(c);
 }

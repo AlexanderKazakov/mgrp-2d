@@ -8,6 +8,7 @@
 #include "util.hpp"
 #include "Stratum.hpp"
 #include "Fracture.hpp"
+#include "Breaker.hpp"
 
 /**
  *         Multistage Hydraulic Fracturing - 2D
@@ -38,8 +39,9 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 	TiXmlElement *xml_task = xml_file->FirstChildElement("task");
 
 	TiXmlElement *xml_system = xml_task->FirstChildElement("system");
-	std::string sequence = xml_system->Attribute("sequence_of_calculation");
 	std::string tip = xml_system->Attribute("tip");
+	Fracture tmpFrac; tmpFrac.setTip(tip);
+	std::string sequence = xml_system->Attribute("sequence_of_calculation");
 	std::string rotation = xml_system->Attribute("rotation");
 	stratum.setSequence(sequence);
 	stratum.setRotation(rotation);
@@ -89,9 +91,9 @@ void loadTask(Stratum &stratum, const char* taskfile) {
 		double b = atof(xml_pressure->Attribute("b"));
 		double c = atof(xml_pressure->Attribute("c"));
 		std::string pressureType = (xml_pressure->Attribute("type"));
-
+		
 		stratum.addFracture(number, volume, x, y, beta, halfLengthOfElements,
-				a, b, c, pressureType, tip);
+		                    Breaker(a, b, c, pressureType));
 		xml_fracture = xml_fracture->NextSiblingElement("fracture");
 	}
 	info("Task from", taskfile, "is loaded");
@@ -117,6 +119,8 @@ int main(int argc, char** argv) {
 	
 	info("MHF-2D is running ...");
 	Stratum stratum;
+	Fracture tmpFrac;
+	tmpFrac.setStratum(&stratum);
 	try {
 		loadTask(stratum, taskfile);
 	} catch (const char *str) {
