@@ -204,6 +204,11 @@ private:
      * @param deltaBeta2 rotation of the right tip element towards its neighbour
      */
 	void replaceTipElements(const double &deltaBeta1, const double &deltaBeta2);
+	/**
+	 * Create a special initial condition of the fracture - linear shape
+     * @param initHalfLength half-length of the line
+     */
+	void createLinearShape(const double &initHalfLength);
 };
 
 namespace std {

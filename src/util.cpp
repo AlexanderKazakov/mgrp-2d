@@ -50,8 +50,8 @@ void checkSLE(const gsl_matrix* A, const gsl_vector* x,
 		if (dasum > normInvA) normInvA = dasum;
 	}
 	double conditionNumber = normA * normInvA;
-	if (conditionNumber > 500)
-		print("Condition number of matrix of SLE is ", conditionNumber);
+	if (conditionNumber > 1000)
+		//print("Condition number of matrix of SLE is ", conditionNumber);
 	gsl_vector_free(row);
 	
 	// Checking on Ax == b

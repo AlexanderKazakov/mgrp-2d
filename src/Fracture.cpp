@@ -48,6 +48,10 @@ void Fracture::allocateElements(double x, double y, double beta, Breaker _breake
 	}
 	
 	leftLength = rightLength = 2*a;
+	
+	// Uncomment for creating a special initial shapes of the fracture 
+	createLinearShape(1.0);
+	grow(M_PI/36, M_PI/36);
 }
 
 bool Fracture::isCompleted() const {
@@ -72,13 +76,18 @@ Field Fracture::calculateImpactInPoint(const double &x, const double &y) const {
 void Fracture::grow() {
 	double deltaBeta1 = elementsL.back().calcAngleOfRotation();
 	double deltaBeta2 = elementsR.back().calcAngleOfRotation();
+	print("predictor ", "K1 = ", elementsR.back().K1(), "\tK2 = ", elementsR.back().K2());
 	deltaBetaL = deltaBeta1; deltaBetaR = deltaBeta2;
-	if ( ! isStopped() ) grow(deltaBeta1, deltaBeta2);
+	// Fracture grows after injecting
+	//if ( ! isStopped() ) grow(deltaBeta1, deltaBeta2);
+	// Fracture doesn't grow after injecting
+	if ( ! isCompleted() ) grow(deltaBeta1, deltaBeta2);
 }
 
 void Fracture::correctRotation() {
 	double deltaBeta1 = (elementsL.back().calcAngleOfRotation() + deltaBetaL) / 2;
 	double deltaBeta2 = (elementsR.back().calcAngleOfRotation() + deltaBetaR) / 2;
+	print("corrector ", "K1 = ", elementsR.back().K1(), "\tK2 = ", elementsR.back().K2());
 	if ( ! isStopped() ) replaceTipElements(deltaBeta1, deltaBeta2);
 }
 
@@ -353,4 +362,10 @@ void Fracture::replaceTipElements(const double& deltaBeta1, const double& deltaB
 		addNewElements(deltaBeta1, deltaBeta2, a);
 	}
 	breaker->calculatePressure(this);
+}
+
+void Fracture::createLinearShape(const double& initHalfLength) {
+	while (leftLength < initHalfLength - 2*a) {
+		grow(0.0, 0.0);
+	}
 }

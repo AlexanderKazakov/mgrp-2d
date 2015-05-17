@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-std=c++11 -c
+CFLAGS=-std=c++11 -c -g
 OBJDIR=src/
 SOURCES=$(OBJDIR)main.cpp $(OBJDIR)Stratum.cpp $(OBJDIR)Breaker.cpp\
 $(OBJDIR)Fracture.cpp $(OBJDIR)Element.cpp $(OBJDIR)Field.cpp $(OBJDIR)util.cpp 

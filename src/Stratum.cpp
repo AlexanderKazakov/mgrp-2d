@@ -12,6 +12,7 @@ void Stratum::addFracture(int number, double volume,
                           Breaker breaker) {
 	info("Adding fracture number", number, "at (", x, ",", y, ") ...");
 	fractures.push_back( Fracture(number, volume, halfLengthOfElements) );
+	beginFracture = fractures.begin();
 	fractures.back().allocateElements(x, y, beta, breaker);
 }
 
@@ -175,7 +176,7 @@ void Stratum::visualize() const{
 	gr.Axis();
 
 	drawFractures(gr);
-	drawField(gr);
+//	drawField(gr);
 //	drawStressDirections(gr);
 	
 	gr.WriteFrame("fractures.png");
@@ -258,7 +259,7 @@ void Stratum::drawFractures(mglGraph& gr) const{
 		mglData y;
 		x.Set(_x, N);
 		y.Set(_y, N);
-		gr.Plot(x, y, ".k");
+		gr.Plot(x, y, ".g");
 		delete [] _x;
 		delete [] _y;
 		fracture++;

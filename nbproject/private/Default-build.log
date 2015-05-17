@@ -1,0 +1,8 @@
+g++ -std=c++11 -c src/main.cpp -o src/main.o
+g++ -std=c++11 -c src/Stratum.cpp -o src/Stratum.o
+g++ -std=c++11 -c src/Breaker.cpp -o src/Breaker.o
+g++ -std=c++11 -c src/Fracture.cpp -o src/Fracture.o
+g++ -std=c++11 -c src/Element.cpp -o src/Element.o
+g++ -std=c++11 -c src/Field.cpp -o src/Field.o
+g++ -std=c++11 -c src/util.cpp -o src/util.o
+g++ src/main.o src/Stratum.o src/Breaker.o src/Fracture.o src/Element.o src/Field.o src/util.o -o mhf-2d -ltinyxml -lgsl -lmgl 
